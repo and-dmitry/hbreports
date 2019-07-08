@@ -3,6 +3,8 @@ import io
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 
+import pytest
+
 from hbreports.xhb import initial_import
 from hbreports.db import account, currency, metadata
 
@@ -10,7 +12,7 @@ from hbreports.db import account, currency, metadata
 # TODO: generate XHB to avoid duplication?
 
 
-CORRECT_XHB = """<homebank v="1.3" d="050206">
+STANDARD_XHB = """<homebank v="1.3" d="050206">
 <properties title="test owner" curr="1" auto_smode="1" auto_weekday="1"/>
 <cur key="2" flags="0" iso="EUR" name="Euro" symb="€" syprf="1"
      dchar="," gchar=" " frac="2" rate="0" mdate="0"/>
@@ -26,31 +28,46 @@ CORRECT_XHB = """<homebank v="1.3" d="050206">
 """
 
 
-def test_import_currencies():
-    pseudofile = io.StringIO(CORRECT_XHB)
+@pytest.fixture
+def std_xhb_file():
+    """File-like object for the standard test-file."""
+    return io.StringIO(STANDARD_XHB)
 
-    engine = create_engine('sqlite:///:memory:')
+
+@pytest.fixture
+def db_engine():
+    engine = create_engine('sqlite:///:memory:', echo=True)
     metadata.create_all(engine)
+    yield engine
+    engine.dispose()
 
-    with engine.begin() as connection:
-        initial_import(pseudofile, connection)
 
-    rows = engine.execute(select([currency])
-                          .order_by(currency.c.id)).fetchall()
+@pytest.fixture
+def db_connection(db_engine):
+    connection = db_engine.connect()
+    yield connection
+    connection.close()
+
+
+def test_import_currencies(std_xhb_file, db_connection):
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    rows = dbc.execute(
+        select([currency])
+        .order_by(currency.c.id)
+    ).fetchall()
     assert rows == [(1, 'Russian Ruble'),
                     (2, 'Euro')]
 
 
-def test_import_accounts():
-    pseudofile = io.StringIO(CORRECT_XHB)
+def test_import_accounts(std_xhb_file, db_connection):
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
 
-    engine = create_engine('sqlite:///:memory:')
-    metadata.create_all(engine)
-
-    with engine.begin() as connection:
-        initial_import(pseudofile, connection)
-
-    rows = engine.execute(
+    rows = dbc.execute(
         select([account.c.id, account.c.name, account.c.currency_id])
         .where(account.c.id.in_((1, 3)))
         .order_by(account.c.id)
