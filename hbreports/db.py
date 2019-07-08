@@ -19,7 +19,7 @@ currency = Table(
     'currency',
     metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', String)
+    Column('name', String, nullable=False, unique=True)
 )
 
 
@@ -27,7 +27,7 @@ account = Table(
     'account',
     metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', String),
-    Column('currency_id', None, ForeignKey('currency.id')),
+    Column('name', String, nullable=False, unique=True),
+    Column('currency_id', None, ForeignKey('currency.id'), nullable=False),
     # TODO: initial, type
 )
