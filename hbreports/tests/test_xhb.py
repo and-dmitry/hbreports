@@ -1,3 +1,4 @@
+import datetime
 import io
 
 from sqlalchemy import create_engine
@@ -6,7 +7,7 @@ from sqlalchemy.sql import select
 import pytest
 
 from hbreports.xhb import initial_import
-from hbreports.db import account, currency, metadata
+from hbreports.db import account, currency, metadata, transaction
 
 
 # TODO: generate XHB to avoid duplication?
@@ -24,6 +25,9 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
          initial="0" minimum="0"/>
 <account key="3" pos="3" type="1" curr="2" name="account3"
          initial="0" minimum="0"/>
+<ope date="737060" amount="-1" account="1"/>
+<ope date="737061" amount="-10" account="2" st="2" category="1"/>
+<ope date="737061" amount="100" account="1" st="2" flags="2" category="3"/>
 </homebank>
 """
 
@@ -76,9 +80,23 @@ def test_import_accounts(std_xhb_file, db_connection):
                     (3, 'account3', 2)]
 
 
+def test_import_transaction_minimal(std_xhb_file, db_connection):
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    tc = transaction.c
+    row = dbc.execute(
+        select([tc.date, tc.account_id])
+        .order_by(tc.id)
+    ).first()
+    assert row == (datetime.date(2019, 1, 1), 1)
+
+
 # TODO:
 # - non-xml file
-# - bad format
+# - not homebank file
+# - unsupported file version
 # - attr not found
 # - elem not found
 # - integrity error

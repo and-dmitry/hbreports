@@ -9,7 +9,13 @@ building reports.
 """
 
 
-from sqlalchemy import Column, ForeignKey, Integer, MetaData, String, Table
+from sqlalchemy import (Column,
+                        Date,
+                        ForeignKey,
+                        Integer,
+                        MetaData,
+                        String,
+                        Table)
 
 
 metadata = MetaData()
@@ -30,4 +36,13 @@ account = Table(
     Column('name', String, nullable=False, unique=True),
     Column('currency_id', None, ForeignKey('currency.id'), nullable=False),
     # TODO: initial, type
+)
+
+
+transaction = Table(
+    'transaction',
+    metadata,
+    Column('id', Integer, primary_key=True),
+    Column('date', Date, nullable=False),
+    Column('account_id', None, ForeignKey('account.id'), nullable=False)
 )
