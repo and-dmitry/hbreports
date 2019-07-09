@@ -6,7 +6,7 @@ from sqlalchemy.sql import select
 
 import pytest
 
-from hbreports.xhb import initial_import
+from hbreports.hbfile import initial_import
 from hbreports.db import account, currency, metadata, transaction
 
 

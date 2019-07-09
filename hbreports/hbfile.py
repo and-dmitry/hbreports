@@ -1,7 +1,7 @@
-"""XHB files processing.
+"""HomeBank file processing.
 
 HomeBank uses custom file format - XHB (.xhb). This module implements
-data import from XHB files.
+import of data from such files.
 
 """
 
