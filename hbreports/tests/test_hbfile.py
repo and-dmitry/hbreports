@@ -7,7 +7,12 @@ from sqlalchemy.sql import select
 import pytest
 
 from hbreports.hbfile import initial_import
-from hbreports.db import account, currency, metadata, transaction
+from hbreports.db import (account,
+                          category,
+                          currency,
+                          metadata,
+                          payee,
+                          transaction)
 
 
 # TODO: generate XHB to avoid duplication?
@@ -25,9 +30,13 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
          initial="0" minimum="0"/>
 <account key="3" pos="3" type="1" curr="2" name="account3"
          initial="0" minimum="0"/>
+<pay key="1" name="payee1"/>
+<pay key="2" name="payee2"/>
+<cat key="1" name="category1"/>
+<cat key="2" parent="1" flags="1" name="subcategory1-1"/>
+<cat key="3" flags="2" name="income_category1"/>
+<cat key="4" name="category2"/>
 <ope date="737060" amount="-1" account="1"/>
-<ope date="737061" amount="-10" account="2" st="2" category="1"/>
-<ope date="737061" amount="100" account="1" st="2" flags="2" category="3"/>
 </homebank>
 """
 
@@ -78,6 +87,47 @@ def test_import_accounts(std_xhb_file, db_connection):
     ).fetchall()
     assert rows == [(1, 'account1', 1),
                     (3, 'account3', 2)]
+
+
+def test_import_payees(std_xhb_file, db_connection):
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    rows = dbc.execute(
+        select([payee])
+        .order_by(payee.c.id)
+    ).fetchall()
+    assert rows == [(1, 'payee1'),
+                    (2, 'payee2')]
+
+
+def test_import_categories_main(std_xhb_file, db_connection):
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    c = category.c
+    rows = dbc.execute(
+        select([c.id, c.name, c.parent_id])
+        .order_by(c.id)
+    ).fetchall()[0:3]
+    assert rows == [(1, 'category1', None),
+                    (2, 'subcategory1-1', 1),
+                    (3, 'income_category1', None)]
+
+
+def test_import_categories_income(std_xhb_file, db_connection):
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    c = category.c
+    rows = dbc.execute(
+        select([c.income])
+        .order_by(c.id)
+    ).fetchall()[0:3]
+    assert rows == [(False, ), (False, ), (True ,)]
 
 
 def test_import_transaction_minimal(std_xhb_file, db_connection):

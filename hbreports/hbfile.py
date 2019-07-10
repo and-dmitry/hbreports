@@ -8,12 +8,13 @@ import of data from such files.
 import datetime
 import xml.etree.ElementTree as ET
 
-from hbreports.db import account, currency, transaction
+from hbreports.db import account, category, currency, payee, transaction
 
 
 def initial_import(file_object, dbc):
     """Import data from file for the first time.
 
+    :param file_object: file-like object with XHB data
     :param sqlalchemy.engine.Connectable dbc: database connection
     """
     # TODO: How much memory does the parsing require for the largest
@@ -35,6 +36,22 @@ def initial_import(file_object, dbc):
             id=elem.attrib['key'],
             name=elem.attrib['name'],
             currency_id=elem.attrib['curr']))
+
+    # payees
+    for elem in root.findall('pay'):
+        dbc.execute(payee.insert().values(
+            id=elem.attrib['key'],
+            name=elem.attrib['name']))
+
+    # categories
+    for elem in root.findall('cat'):
+        flags = int(elem.get('flags', 0))
+        dbc.execute(category.insert().values(
+            id=elem.attrib['key'],
+            name=elem.attrib['name'],
+            parent_id=elem.get('parent'),
+            # 2 means it's income
+            income=bool(flags & 2)))
 
     # transactions
     for elem in root.findall('ope'):
