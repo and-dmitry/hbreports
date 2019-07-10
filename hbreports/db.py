@@ -17,6 +17,7 @@ from sqlalchemy import (Boolean,
                         ForeignKey,
                         Integer,
                         MetaData,
+                        Numeric,
                         String,
                         Table)
 
@@ -65,5 +66,20 @@ transaction = Table(
     metadata,
     Column('id', Integer, primary_key=True),
     Column('date', Date, nullable=False),
-    Column('account_id', None, ForeignKey('account.id'), nullable=False)
+    Column('account_id', None, ForeignKey('account.id'), nullable=False),
+    Column('status', Integer, nullable=False, default=0),
+    Column('payee', None, ForeignKey('payee.id')),
+    Column('memo', String),
+    Column('info', String),
+    Column('paymode', Integer)
+)
+
+split = Table(
+    'split',
+    metadata,
+    Column('id', Integer, primary_key=True),
+    Column('amount', Numeric, nullable=False),
+    Column('category_id', None, ForeignKey('category.id')),
+    Column('memo', String),
+    Column('transaction_id', None, ForeignKey('transaction.id'))
 )
