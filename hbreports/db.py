@@ -8,18 +8,25 @@ are tables and columns only for things that may be helpful for
 building reports. It should be easy to create SELECT queries for this
 schema. Other operations (especially UPDATE and DELETE), perfomance
 and size are not as important in this case.
+
+We're using double type for money. SQLAlchemy doesn't support Numeric
+type with SQLite. HomeBank uses double internally. We're going to use
+double too. This should be more than enough for purposes of this
+application.
 """
 
 
-from sqlalchemy import (Boolean,
+from sqlalchemy import (event,
+                        Boolean,
                         Column,
                         Date,
+                        Float,
                         ForeignKey,
                         Integer,
                         MetaData,
-                        Numeric,
                         String,
                         Table)
+from sqlalchemy.engine import Engine
 
 
 metadata = MetaData()
@@ -67,8 +74,8 @@ transaction = Table(
     Column('id', Integer, primary_key=True),
     Column('date', Date, nullable=False),
     Column('account_id', None, ForeignKey('account.id'), nullable=False),
-    Column('status', Integer, nullable=False, default=0),
-    Column('payee', None, ForeignKey('payee.id')),
+    Column('status', Integer, nullable=False),
+    Column('payee_id', None, ForeignKey('payee.id')),
     Column('memo', String),
     Column('info', String),
     Column('paymode', Integer)
@@ -78,8 +85,17 @@ split = Table(
     'split',
     metadata,
     Column('id', Integer, primary_key=True),
-    Column('amount', Numeric, nullable=False),
+    Column('amount', Float, nullable=False),
     Column('category_id', None, ForeignKey('category.id')),
     Column('memo', String),
-    Column('transaction_id', None, ForeignKey('transaction.id'))
+    Column('transaction_id', None,
+           ForeignKey('transaction.id'), nullable=False)
 )
+
+
+# Enable foreign key constraint. It's disabled in sqlite by default.
+@event.listens_for(Engine, "connect")
+def enable_foreign_keys(dbapi_connection, _):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()

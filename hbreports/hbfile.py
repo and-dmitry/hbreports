@@ -8,7 +8,12 @@ import of data from such files.
 import datetime
 import xml.etree.ElementTree as ET
 
-from hbreports.db import account, category, currency, payee, transaction
+from hbreports.db import (account,
+                          category,
+                          currency,
+                          payee,
+                          split,
+                          transaction)
 
 
 def initial_import(file_object, dbc):
@@ -45,7 +50,7 @@ def initial_import(file_object, dbc):
 
     # categories
     for elem in root.findall('cat'):
-        flags = int(elem.get('flags', 0))
+        flags = int(elem.get('flags', '0'))
         dbc.execute(category.insert().values(
             id=elem.attrib['key'],
             name=elem.attrib['name'],
@@ -55,6 +60,16 @@ def initial_import(file_object, dbc):
 
     # transactions
     for elem in root.findall('ope'):
-        dbc.execute(transaction.insert().values(
+        result = dbc.execute(transaction.insert().values(
             date=datetime.date.fromordinal(int(elem.attrib['date'])),
-            account_id=elem.attrib['account']))
+            account_id=elem.attrib['account'],
+            status=elem.get('st', '0'),
+            payee_id=elem.get('payee'),
+            memo=elem.get('wording'),
+            info=elem.get('info'),
+            paymode=elem.get('paymode')
+        ))
+        dbc.execute(split.insert().values(
+            amount=elem.attrib['amount'],
+            category_id=elem.get('category'),
+            transaction_id=result.inserted_primary_key[0]))

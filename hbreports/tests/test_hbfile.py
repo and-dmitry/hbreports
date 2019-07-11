@@ -12,7 +12,8 @@ from hbreports.db import (account,
                           currency,
                           metadata,
                           payee,
-                          transaction)
+                          transaction,
+                          split)
 
 
 # TODO: generate XHB to avoid duplication?
@@ -37,6 +38,8 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
 <cat key="3" flags="2" name="income_category1"/>
 <cat key="4" name="category2"/>
 <ope date="737060" amount="-1" account="1"/>
+<ope date="737061" amount="-7.3300000000000001" account="1" paymode="4" st="2"
+     payee="1" category="1" wording="full memo" info="info" tags="tag1 tag2"/>
 </homebank>
 """
 
@@ -135,12 +138,40 @@ def test_import_transaction_minimal(std_xhb_file, db_connection):
     with dbc.begin():
         initial_import(std_xhb_file, dbc)
 
-    tc = transaction.c
     row = dbc.execute(
-        select([tc.date, tc.account_id])
-        .order_by(tc.id)
+        select([transaction, split])
+        .select_from(transaction.join(
+            split,
+            split.c.transaction_id == transaction.c.id))
+        .where(transaction.c.id == 1)
     ).first()
-    assert row == (datetime.date(2019, 1, 1), 1)
+    assert row.date == datetime.date(2019, 1, 1)
+    assert row.account_id == 1
+    assert row.status == 0
+    assert round(row.amount, 2) == -1
+
+
+def test_import_transaction_full(std_xhb_file, db_connection):
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    row = dbc.execute(
+        select([transaction, split])
+        .select_from(transaction.join(
+            split,
+            split.c.transaction_id == transaction.c.id))
+        .where(transaction.c.id == 2)
+    ).first()
+    assert row.date == datetime.date(2019, 1, 2)
+    assert row.account_id == 1
+    assert row.status == 2
+    assert row.amount == -7.33
+    assert row.payee_id == 1
+    assert row[transaction.c.memo] == 'full memo'
+    assert row.info == 'info'
+    assert row.paymode == 4
+    assert row.category_id == 1
 
 
 # TODO:
