@@ -81,6 +81,7 @@ transaction = Table(
     Column('paymode', Integer)
 )
 
+
 split = Table(
     'split',
     metadata,

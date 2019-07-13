@@ -134,7 +134,7 @@ def test_import_categories_income(std_xhb_file, db_connection):
         select([c.income])
         .order_by(c.id)
     ).fetchall()[0:3]
-    assert rows == [(False, ), (False, ), (True ,)]
+    assert rows == [(False,), (False,), (True,)]
 
 
 def test_import_transaction_minimal(std_xhb_file, db_connection):
