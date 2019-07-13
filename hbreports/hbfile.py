@@ -8,12 +8,14 @@ import of data from such files.
 import datetime
 import xml.etree.ElementTree as ET
 
-from hbreports.db import (account,
-                          category,
-                          currency,
-                          payee,
-                          split,
-                          transaction)
+from hbreports.db import (
+    account,
+    category,
+    currency,
+    payee,
+    split,
+    transaction,
+)
 
 
 def initial_import(file_object, dbc):

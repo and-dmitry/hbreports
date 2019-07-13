@@ -16,18 +16,19 @@ application.
 """
 
 
-from sqlalchemy import (event,
-                        Boolean,
-                        Column,
-                        Date,
-                        Float,
-                        ForeignKey,
-                        Integer,
-                        MetaData,
-                        String,
-                        Table)
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    Float,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    event,
+)
 from sqlalchemy.engine import Engine
-
 
 metadata = MetaData()
 

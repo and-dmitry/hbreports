@@ -1,20 +1,20 @@
 import datetime
 import io
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select
 
-import pytest
-
+from hbreports.db import (
+    account,
+    category,
+    currency,
+    metadata,
+    payee,
+    split,
+    transaction,
+)
 from hbreports.hbfile import initial_import
-from hbreports.db import (account,
-                          category,
-                          currency,
-                          metadata,
-                          payee,
-                          transaction,
-                          split)
-
 
 # TODO: generate XHB to avoid duplication?
 
