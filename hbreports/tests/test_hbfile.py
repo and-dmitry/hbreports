@@ -40,6 +40,10 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
 <ope date="737060" amount="-1" account="1"/>
 <ope date="737061" amount="-7.3300000000000001" account="1" paymode="4" st="2"
      payee="1" category="1" wording="full memo" info="info" tags="tag1 tag2"/>
+<ope date="737249" amount="-10" account="1" dst_account="2" paymode="5" st="2"
+     kxfer="1"/>
+<ope date="737249" amount="10" account="2" dst_account="1" paymode="5"
+     flags="2" kxfer="1"/>
 </homebank>
 """
 
@@ -172,6 +176,24 @@ def test_import_transaction_full(std_xhb_file, db_connection):
     assert row.info == 'info'
     assert row.paymode == 4
     assert row.category_id == 1
+
+
+def test_import_transaction_internal(std_xhb_file, db_connection):
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    rows = dbc.execute(
+        select([transaction, split])
+        .select_from(transaction.join(
+            split,
+            split.c.transaction_id == transaction.c.id))
+        .where(transaction.c.id.in_((3, 4)))
+        .order_by(transaction.c.id)
+    ).fetchall()
+    assert rows[0].paymode == 5
+    assert rows[1].paymode == 5
+    assert rows[0].amount == -rows[1].amount
 
 
 # TODO:
