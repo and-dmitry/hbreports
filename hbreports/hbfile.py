@@ -71,7 +71,32 @@ def initial_import(file_object, dbc):
             info=elem.get('info'),
             paymode=elem.get('paymode')
         ))
-        dbc.execute(split.insert().values(
-            amount=elem.attrib['amount'],
-            category_id=elem.get('category'),
-            transaction_id=result.inserted_primary_key[0]))
+        if int(elem.get('flags', '0')) & 256:  # TODO: const
+            SPLIT_DELIMITER = '||'
+            split_amounts = elem.attrib['samt'].split(SPLIT_DELIMITER)
+            split_categories = [
+                _get_category_id(cat)
+                for cat in elem.attrib['scat'].split(SPLIT_DELIMITER)]
+            split_memos = elem.attrib['smem'].split(SPLIT_DELIMITER)
+            for split_amount, split_category, split_memo in zip(
+                    split_amounts,
+                    split_categories,
+                    split_memos):
+                dbc.execute(split.insert().values(
+                    amount=split_amount,
+                    category_id=split_category,
+                    memo=split_memo,
+                    transaction_id=result.inserted_primary_key[0]))
+        else:
+            dbc.execute(split.insert().values(
+                amount=elem.attrib['amount'],
+                category_id=elem.get('category'),
+                transaction_id=result.inserted_primary_key[0]))
+
+
+def _get_category_id(file_category):
+    """Get category_id from category read from file."""
+    if file_category == '0':
+        return None
+    else:
+        return int(file_category)

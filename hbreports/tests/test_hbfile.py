@@ -44,6 +44,11 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
      kxfer="1"/>
 <ope date="737249" amount="10" account="2" dst_account="1" paymode="5"
      flags="2" kxfer="1"/>
+<ope date="737249" amount="-3" account="1" st="2" flags="256"
+     wording="split transaction" scat="1||4" samt="-1||-2"
+     smem="split memo 1||split memo 2"/>
+<ope date="737254" amount="-8" account="1" flags="256" scat="0||0"
+     samt="-1||-7" smem="||"/>
 </homebank>
 """
 
@@ -194,6 +199,52 @@ def test_import_transaction_internal(std_xhb_file, db_connection):
     assert rows[0].paymode == 5
     assert rows[1].paymode == 5
     assert rows[0].amount == -rows[1].amount
+
+
+def test_import_transaction_split(std_xhb_file, db_connection):
+    """Test import of split transaction."""
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    rows = dbc.execute(
+        select([transaction, split])
+        .select_from(transaction.join(
+            split,
+            split.c.transaction_id == transaction.c.id))
+        .where(transaction.c.id == 5)
+        .order_by(split.c.id)
+    ).fetchall()
+    first, second = rows
+    assert first[transaction.c.memo] == 'split transaction'
+    assert second[transaction.c.memo] == first[transaction.c.memo]
+    assert first[split.c.memo] == 'split memo 1'
+    assert second[split.c.memo] == 'split memo 2'
+    assert first.category_id == 1
+    assert second.category_id == 4
+    assert first.amount == -1
+    assert second.amount == -2
+
+
+def test_import_transaction_minimal_split(std_xhb_file, db_connection):
+    """Test import of minimal split transaction."""
+    dbc = db_connection
+    with dbc.begin():
+        initial_import(std_xhb_file, dbc)
+
+    rows = dbc.execute(
+        select([transaction, split])
+        .select_from(transaction.join(
+            split,
+            split.c.transaction_id == transaction.c.id))
+        .where(transaction.c.id == 6)
+        .order_by(split.c.id)
+    ).fetchall()
+    first, second = rows
+    assert first[split.c.memo] == ''
+    assert second[split.c.memo] == ''
+    assert first.category_id is None
+    assert second.category_id is None
 
 
 # TODO:
