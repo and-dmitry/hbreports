@@ -56,7 +56,7 @@ def std_xhb_file():
 
 @pytest.fixture
 def db_engine():
-    engine = create_engine('sqlite:///:memory:', echo=True)
+    engine = create_engine('sqlite:///:memory:', echo=False)
     metadata.create_all(engine)
     yield engine
     engine.dispose()
