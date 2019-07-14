@@ -152,7 +152,7 @@ def test_import_transaction_minimal(std_xhb_file, db_connection):
     assert row.date == datetime.date(2019, 1, 1)
     assert row.account_id == 1
     assert row.status == 0
-    assert round(row.amount, 2) == -1
+    assert round(row.amount, 2) == -1.0
 
 
 def test_import_transaction_full(std_xhb_file, db_connection):
@@ -170,7 +170,7 @@ def test_import_transaction_full(std_xhb_file, db_connection):
     assert row.date == datetime.date(2019, 1, 2)
     assert row.account_id == 1
     assert row.status == 2
-    assert row.amount == -7.33
+    assert round(row.amount, 2) == -7.33
     assert row.payee_id == 1
     assert row[transaction.c.memo] == 'full memo'
     assert row.info == 'info'
