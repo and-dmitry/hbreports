@@ -75,11 +75,10 @@ def db_connection(db_engine):
 
 
 def test_import_currencies(std_xhb_file, db_connection):
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
-    rows = dbc.execute(
+    rows = db_connection.execute(
         select([currency])
         .order_by(currency.c.id)
     ).fetchall()
@@ -88,11 +87,10 @@ def test_import_currencies(std_xhb_file, db_connection):
 
 
 def test_import_accounts(std_xhb_file, db_connection):
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
-    rows = dbc.execute(
+    rows = db_connection.execute(
         select([account.c.id, account.c.name, account.c.currency_id])
         .where(account.c.id.in_((1, 3)))
         .order_by(account.c.id)
@@ -102,11 +100,10 @@ def test_import_accounts(std_xhb_file, db_connection):
 
 
 def test_import_payees(std_xhb_file, db_connection):
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
-    rows = dbc.execute(
+    rows = db_connection.execute(
         select([payee])
         .order_by(payee.c.id)
     ).fetchall()
@@ -115,12 +112,11 @@ def test_import_payees(std_xhb_file, db_connection):
 
 
 def test_import_categories_main(std_xhb_file, db_connection):
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
     c = category.c
-    rows = dbc.execute(
+    rows = db_connection.execute(
         select([c.id, c.name, c.parent_id])
         .order_by(c.id)
     ).fetchall()[0:3]
@@ -130,12 +126,11 @@ def test_import_categories_main(std_xhb_file, db_connection):
 
 
 def test_import_categories_income(std_xhb_file, db_connection):
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
     c = category.c
-    rows = dbc.execute(
+    rows = db_connection.execute(
         select([c.income])
         .order_by(c.id)
     ).fetchall()[0:3]
@@ -143,11 +138,10 @@ def test_import_categories_income(std_xhb_file, db_connection):
 
 
 def test_import_transaction_minimal(std_xhb_file, db_connection):
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
-    row = dbc.execute(
+    row = db_connection.execute(
         select([transaction, split])
         .select_from(transaction.join(
             split,
@@ -161,11 +155,10 @@ def test_import_transaction_minimal(std_xhb_file, db_connection):
 
 
 def test_import_transaction_full(std_xhb_file, db_connection):
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
-    row = dbc.execute(
+    row = db_connection.execute(
         select([transaction, split])
         .select_from(transaction.join(
             split,
@@ -184,11 +177,10 @@ def test_import_transaction_full(std_xhb_file, db_connection):
 
 
 def test_import_transaction_internal(std_xhb_file, db_connection):
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
-    rows = dbc.execute(
+    rows = db_connection.execute(
         select([transaction, split])
         .select_from(transaction.join(
             split,
@@ -203,11 +195,10 @@ def test_import_transaction_internal(std_xhb_file, db_connection):
 
 def test_import_transaction_split(std_xhb_file, db_connection):
     """Test import of split transaction."""
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
-    rows = dbc.execute(
+    rows = db_connection.execute(
         select([transaction, split])
         .select_from(transaction.join(
             split,
@@ -228,11 +219,10 @@ def test_import_transaction_split(std_xhb_file, db_connection):
 
 def test_import_transaction_minimal_split(std_xhb_file, db_connection):
     """Test import of minimal split transaction."""
-    dbc = db_connection
-    with dbc.begin():
-        initial_import(std_xhb_file, dbc)
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
 
-    rows = dbc.execute(
+    rows = db_connection.execute(
         select([transaction, split])
         .select_from(transaction.join(
             split,
