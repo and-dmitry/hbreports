@@ -71,7 +71,7 @@ def initial_import(file_object, dbc):
             info=elem.get('info'),
             paymode=elem.get('paymode')
         ))
-        if int(elem.get('flags', '0')) & 256:  # TODO: const
+        if int(elem.get('flags', '0')) & 256:  # TODO: enum
             SPLIT_DELIMITER = '||'
             split_amounts = elem.attrib['samt'].split(SPLIT_DELIMITER)
             split_categories = [
