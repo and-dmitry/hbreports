@@ -226,13 +226,9 @@ def test_import_transaction_minimal_split(std_xhb_file, db_connection):
     with db_connection.begin():
         initial_import(std_xhb_file, db_connection)
 
-    # TODO: rm join
     rows = db_connection.execute(
-        select([transaction, split])
-        .select_from(transaction.join(
-            split,
-            split.c.transaction_id == transaction.c.id))
-        .where(transaction.c.id == 6)
+        select([split])
+        .where(split.c.transaction_id == 6)
         .order_by(split.c.id)
     ).fetchall()
     first, second = rows
