@@ -1,7 +1,7 @@
 """Database interface.
 
 Terms from HomeBank GUI are preferable for table and column
-names beacuse they are already familiar to the user.
+names because they are already familiar to the user.
 
 This schema doesn't support all data from HomeBank .xhb file. There
 are tables and columns only for things that may be helpful for
