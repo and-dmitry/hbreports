@@ -31,6 +31,7 @@ def initial_import(file_object, dbc):
     root = tree.getroot()
 
     # TODO: create some sort of attr-column mapper?
+    # TODO: create importer classes?
 
     # currencies
     for elem in root.findall('cur'):
@@ -51,55 +52,62 @@ def initial_import(file_object, dbc):
             id=elem.attrib['key'],
             name=elem.attrib['name']))
 
-    # categories
     for elem in root.findall('cat'):
-        flags = int(elem.get('flags', '0'))
-        dbc.execute(category.insert().values(
-            id=elem.attrib['key'],
-            name=elem.attrib['name'],
-            parent_id=elem.get('parent'),
-            # 2 means it's income
-            income=bool(flags & 2)))
+        _import_category(elem, dbc)
 
     # transactions
     for elem in root.findall('ope'):
-        result = dbc.execute(transaction.insert().values(
-            date=datetime.date.fromordinal(int(elem.attrib['date'])),
-            account_id=elem.attrib['account'],
-            status=elem.get('st', '0'),
-            payee_id=elem.get('payee'),
-            memo=elem.get('wording'),
-            info=elem.get('info'),
-            paymode=elem.get('paymode')
+        _import_transaction(elem, dbc)
+
+
+def _import_category(elem, dbc):
+    flags = int(elem.get('flags', '0'))
+    dbc.execute(category.insert().values(
+        id=elem.attrib['key'],
+        name=elem.attrib['name'],
+        parent_id=elem.get('parent'),
+        # 2 means it's income
+        income=bool(flags & 2)))
+
+
+def _import_transaction(elem, dbc):
+    result = dbc.execute(transaction.insert().values(
+        date=datetime.date.fromordinal(int(elem.attrib['date'])),
+        account_id=elem.attrib['account'],
+        status=elem.get('st', '0'),
+        payee_id=elem.get('payee'),
+        memo=elem.get('wording'),
+        info=elem.get('info'),
+        paymode=elem.get('paymode')
+    ))
+    transaction_id = result.inserted_primary_key[0]
+    # tags
+    for tag in elem.attrib.get('tags', '').split():
+        dbc.execute(transaction_tag.insert().values(
+            transaction_id=transaction_id,
+            name=tag
         ))
-        transaction_id = result.inserted_primary_key[0]
-        # tags
-        for tag in elem.attrib.get('tags', '').split():
-            dbc.execute(transaction_tag.insert().values(
-                transaction_id=transaction_id,
-                name=tag
-            ))
-        if int(elem.get('flags', '0')) & 256:  # TODO: enum
-            SPLIT_DELIMITER = '||'
-            split_amounts = elem.attrib['samt'].split(SPLIT_DELIMITER)
-            split_categories = [
-                _get_category_id(cat)
-                for cat in elem.attrib['scat'].split(SPLIT_DELIMITER)]
-            split_memos = elem.attrib['smem'].split(SPLIT_DELIMITER)
-            for split_amount, split_category, split_memo in zip(
-                    split_amounts,
-                    split_categories,
-                    split_memos):
-                dbc.execute(split.insert().values(
-                    amount=split_amount,
-                    category_id=split_category,
-                    memo=split_memo,
-                    transaction_id=transaction_id))
-        else:
+    if int(elem.get('flags', '0')) & 256:  # TODO: enum
+        SPLIT_DELIMITER = '||'
+        split_amounts = elem.attrib['samt'].split(SPLIT_DELIMITER)
+        split_categories = [
+            _get_category_id(cat)
+            for cat in elem.attrib['scat'].split(SPLIT_DELIMITER)]
+        split_memos = elem.attrib['smem'].split(SPLIT_DELIMITER)
+        for split_amount, split_category, split_memo in zip(
+                split_amounts,
+                split_categories,
+                split_memos):
             dbc.execute(split.insert().values(
-                amount=elem.attrib['amount'],
-                category_id=elem.get('category'),
+                amount=split_amount,
+                category_id=split_category,
+                memo=split_memo,
                 transaction_id=transaction_id))
+    else:
+        dbc.execute(split.insert().values(
+            amount=elem.attrib['amount'],
+            category_id=elem.get('category'),
+            transaction_id=transaction_id))
 
 
 def _get_category_id(file_category):
