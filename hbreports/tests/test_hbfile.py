@@ -3,7 +3,10 @@ import io
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.sql import select
+from sqlalchemy.sql import (
+    func,
+    select,
+)
 
 from hbreports.db import (
     account,
@@ -13,6 +16,7 @@ from hbreports.db import (
     payee,
     split,
     transaction,
+    transaction_tag,
 )
 from hbreports.hbfile import initial_import
 
@@ -222,6 +226,7 @@ def test_import_transaction_minimal_split(std_xhb_file, db_connection):
     with db_connection.begin():
         initial_import(std_xhb_file, db_connection)
 
+    # TODO: rm join
     rows = db_connection.execute(
         select([transaction, split])
         .select_from(transaction.join(
@@ -235,6 +240,30 @@ def test_import_transaction_minimal_split(std_xhb_file, db_connection):
     assert second[split.c.memo] == ''
     assert first.category_id is None
     assert second.category_id is None
+
+
+def test_import_transaction_no_tags(std_xhb_file, db_connection):
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
+
+    count = db_connection.execute(
+        select([func.count(transaction_tag.c.id)])
+        .where(transaction_tag.c.transaction_id == 1)
+        .order_by(transaction_tag.c.name)
+    ).scalar()
+    assert count == 0
+
+
+def test_import_transaction_with_tags(std_xhb_file, db_connection):
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
+
+    rows = db_connection.execute(
+        select([transaction_tag.c.name])
+        .where(transaction_tag.c.transaction_id == 2)
+        .order_by(transaction_tag.c.name)
+    ).fetchall()
+    assert [row.name for row in rows] == ['tag1', 'tag2']
 
 
 # TODO:

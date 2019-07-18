@@ -15,6 +15,7 @@ from hbreports.db import (
     payee,
     split,
     transaction,
+    transaction_tag,
 )
 
 
@@ -71,6 +72,13 @@ def initial_import(file_object, dbc):
             info=elem.get('info'),
             paymode=elem.get('paymode')
         ))
+        transaction_id = result.inserted_primary_key[0]
+        # tags
+        for tag in elem.attrib.get('tags', '').split():
+            dbc.execute(transaction_tag.insert().values(
+                transaction_id=transaction_id,
+                name=tag
+            ))
         if int(elem.get('flags', '0')) & 256:  # TODO: enum
             SPLIT_DELIMITER = '||'
             split_amounts = elem.attrib['samt'].split(SPLIT_DELIMITER)
@@ -86,12 +94,12 @@ def initial_import(file_object, dbc):
                     amount=split_amount,
                     category_id=split_category,
                     memo=split_memo,
-                    transaction_id=result.inserted_primary_key[0]))
+                    transaction_id=transaction_id))
         else:
             dbc.execute(split.insert().values(
                 amount=elem.attrib['amount'],
                 category_id=elem.get('category'),
-                transaction_id=result.inserted_primary_key[0]))
+                transaction_id=transaction_id))
 
 
 def _get_category_id(file_category):

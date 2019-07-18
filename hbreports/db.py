@@ -32,6 +32,7 @@ from sqlalchemy.engine import Engine
 
 metadata = MetaData()
 
+# TODO: create a namespace for tables?
 
 currency = Table(
     'currency',
@@ -92,6 +93,20 @@ split = Table(
     Column('memo', String),
     Column('transaction_id', None,
            ForeignKey('transaction.id'), nullable=False)
+)
+
+
+# Using one-to-many approach for transaction tags. We will usually
+# join transaction and tag tables. Tag information is almost useless on
+# its own for our purposes. Using many-to-many scheme would just mean
+# an additional join.
+transaction_tag = Table(
+    'transaction_tag',
+    metadata,
+    Column('id', Integer, primary_key=True),
+    Column('transaction_id', None,
+           ForeignKey('transaction.id'), nullable=False),
+    Column('name', String, nullable=False)
 )
 
 
