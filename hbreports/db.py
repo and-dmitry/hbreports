@@ -57,7 +57,7 @@ category = Table(
     metadata,
     Column('id', Integer, primary_key=True),
     Column('name', String, nullable=False, unique=True),
-    Column('parent_id', None, ForeignKey('currency.id')),
+    Column('parent_id', None, ForeignKey('category.id')),
     Column('income', Boolean, nullable=False)
 )
 
