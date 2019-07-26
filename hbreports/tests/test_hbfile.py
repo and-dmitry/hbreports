@@ -20,9 +20,13 @@ from hbreports.db import (
 )
 from hbreports.hbfile import initial_import
 
-# TODO: generate XHB to avoid duplication?
 
-
+# Hard-coded input makes tests fragile and leads to duplication. On
+# the other hand I don't want to implement .XHB generator. At least
+# not yet.
+#
+# WARNING: Avoid editing existing elements for new tests. Better add
+# new ones.
 STANDARD_XHB = """<homebank v="1.3" d="050206">
 <properties title="test owner" curr="1" auto_smode="1" auto_weekday="1"/>
 <cur key="2" flags="0" iso="EUR" name="Euro" symb="€" syprf="1"
