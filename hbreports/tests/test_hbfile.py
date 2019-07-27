@@ -267,6 +267,7 @@ def test_import_transaction_with_tags(std_xhb_file, db_connection):
 
 
 # TODO:
+# - same name for subcategories
 # - non-xml file
 # - not homebank file
 # - unsupported file version
