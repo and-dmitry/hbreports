@@ -26,6 +26,7 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
+    UniqueConstraint,
     event,
 )
 from sqlalchemy.engine import Engine
@@ -56,9 +57,10 @@ category = Table(
     'category',
     metadata,
     Column('id', Integer, primary_key=True),
-    Column('name', String, nullable=False, unique=True),
+    Column('name', String, nullable=False),
     Column('parent_id', None, ForeignKey('category.id')),
-    Column('income', Boolean, nullable=False)
+    Column('income', Boolean, nullable=False),
+    UniqueConstraint('name', 'parent_id')
 )
 
 

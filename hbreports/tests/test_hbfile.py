@@ -45,6 +45,8 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
 <cat key="2" parent="1" flags="1" name="subcategory1-1"/>
 <cat key="3" flags="2" name="income_category1"/>
 <cat key="4" name="category2"/>
+<cat key="5" parent="1" flags="1" name="subc"/>
+<cat key="6" parent="4" flags="1" name="subc"/>
 <ope date="737060" amount="-1" account="1"/>
 <ope date="737061" amount="-7.3300000000000001" account="1" paymode="4" st="2"
      payee="1" category="1" wording="full memo" info="info" tags="tag1 tag2"/>
@@ -267,7 +269,6 @@ def test_import_transaction_with_tags(std_xhb_file, db_connection):
 
 
 # TODO:
-# - same name for subcategories
 # - non-xml file
 # - not homebank file
 # - unsupported file version
