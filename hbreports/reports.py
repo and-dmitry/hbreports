@@ -5,10 +5,12 @@ ridiculously long.
 """
 
 from sqlalchemy import func
-from sqlalchemy.sql import select
+from sqlalchemy.sql import and_, or_, select
 
 from hbreports.db import (
     account,
+    category,
+    split,
     transaction,
 )
 from hbreports.tables import (
@@ -58,7 +60,36 @@ class AmcReport:
         self._to_year = to_year
 
     def run(self, dbc):
-        table = SimpleTable()
-        # We'll start with this:
-        # select cat.name, count(*) as cnt, sum(amount) as s from 'transaction' as tr join split on split.transaction_id == tr.id left join category as subcat on subcat.id = split.category_id left join category as cat on cat.id = subcat.parent_id or cat.id = subcat.id and cat.parent_id is null group by cat.name order by cnt desc;
+        # TODO: this skips years and categories with no
+        # transactions. It's fixable but do we really need them?
+        #
+        # TODO: this is not working correctly yet: filter tr status,
+        # income/expense category, internal xfers
+        topcat = category.alias()
+        subcat = category.alias()
+        year = func.strftime('%Y', transaction.c.date).label('year')
+        result = dbc.execute(
+            select([
+                topcat.c.name,
+                year,
+                func.sum(split.c.amount)
+            ])
+            .select_from(
+                transaction
+                .join(split, split.c.transaction_id == transaction.c.id)
+                .outerjoin(subcat, subcat.c.id == split.c.category_id)
+                .outerjoin(topcat,
+                           or_(topcat.c.id == subcat.c.parent_id,
+                               and_(topcat.c.id == subcat.c.id,
+                                    topcat.c.parent_id == None)))  # noqa: E711
+            )
+            # Using year instead of date probably hurts perfomance a little
+            .where(year.between(str(self._from_year), str(self._to_year)))
+            .group_by(topcat.c.name, 'year')
+        )
+        table = Table2d()
+        table.corner = 'Category/Year'
+        for row in result:
+            print(row)
+            table.set_cell(row[0], row[1], row[2])
         return table

@@ -26,6 +26,22 @@ def db_connection(db_engine):
     connection.close()
 
 
+@pytest.fixture
+def demo_db(db_connection):
+    db_connection.execute(db.currency.insert(), [
+        {'id': 1, 'name': 'currency1'},
+    ])
+    db_connection.execute(db.account.insert(), [
+        {'id': 1, 'name': 'account1', 'currency_id': 1},
+        {'id': 2, 'name': 'account2', 'currency_id': 1},
+    ])
+    db_connection.execute(db.transaction.insert(), [
+        {'account_id': 1, 'date': datetime.date(2018, 1, 1), 'status': 0},
+    ])
+    db_connection.execute(db.split.insert(), [
+        {'transaction_id': 1, 'amount': 10.0},
+    ])
+
 # TTA report tests
 
 
@@ -90,7 +106,7 @@ def test_tta_basic(db_connection):
 # AMC report tests
 
 
-def test_amc_one_year(db_connection):
+def test_amc_basic(db_connection, demo_db):
     year = 2018
     report = AmcReport(from_year=year,
                        to_year=year)
@@ -98,15 +114,8 @@ def test_amc_one_year(db_connection):
     header, row = table.rows
     assert header[1] == str(year)
     # None represents 'no category', for now
-    assert list(row) == [None, 0.0]
+    assert row[0] is None
+    assert isinstance(row[1], float)
 
 
-def test_amc_years_range(db_connection):
-    from_year = 2017
-    to_year = 2019
-    report = AmcReport(from_year=from_year,
-                       to_year=to_year)
-    table = report.run(db_connection)
-    header, row = table.rows
-    assert header[1:] == [str(year)
-                          for year in range(from_year, to_year + 1)]
+# TODO: real test for amc report
