@@ -15,8 +15,8 @@ from hbreports.db import (
     metadata,
     payee,
     split,
-    transaction,
-    transaction_tag,
+    txn,
+    txn_tag,
 )
 from hbreports.hbfile import initial_import
 
@@ -152,11 +152,11 @@ def test_import_transaction_minimal(std_xhb_file, db_connection):
         initial_import(std_xhb_file, db_connection)
 
     row = db_connection.execute(
-        select([transaction, split])
-        .select_from(transaction.join(
+        select([txn, split])
+        .select_from(txn.join(
             split,
-            split.c.transaction_id == transaction.c.id))
-        .where(transaction.c.id == 1)
+            split.c.txn_id == txn.c.id))
+        .where(txn.c.id == 1)
     ).first()
     assert row.date == datetime.date(2019, 1, 1)
     assert row.account_id == 1
@@ -169,18 +169,18 @@ def test_import_transaction_full(std_xhb_file, db_connection):
         initial_import(std_xhb_file, db_connection)
 
     row = db_connection.execute(
-        select([transaction, split])
-        .select_from(transaction.join(
+        select([txn, split])
+        .select_from(txn.join(
             split,
-            split.c.transaction_id == transaction.c.id))
-        .where(transaction.c.id == 2)
+            split.c.txn_id == txn.c.id))
+        .where(txn.c.id == 2)
     ).first()
     assert row.date == datetime.date(2019, 1, 2)
     assert row.account_id == 1
     assert row.status == 2
     assert round(row.amount, 2) == -7.33
     assert row.payee_id == 1
-    assert row[transaction.c.memo] == 'full memo'
+    assert row[txn.c.memo] == 'full memo'
     assert row.info == 'info'
     assert row.paymode == 4
     assert row.category_id == 1
@@ -191,12 +191,12 @@ def test_import_transaction_internal(std_xhb_file, db_connection):
         initial_import(std_xhb_file, db_connection)
 
     rows = db_connection.execute(
-        select([transaction, split])
-        .select_from(transaction.join(
+        select([txn, split])
+        .select_from(txn.join(
             split,
-            split.c.transaction_id == transaction.c.id))
-        .where(transaction.c.id.in_((3, 4)))
-        .order_by(transaction.c.id)
+            split.c.txn_id == txn.c.id))
+        .where(txn.c.id.in_((3, 4)))
+        .order_by(txn.c.id)
     ).fetchall()
     assert rows[0].paymode == 5
     assert rows[1].paymode == 5
@@ -209,16 +209,16 @@ def test_import_transaction_split(std_xhb_file, db_connection):
         initial_import(std_xhb_file, db_connection)
 
     rows = db_connection.execute(
-        select([transaction, split])
-        .select_from(transaction.join(
+        select([txn, split])
+        .select_from(txn.join(
             split,
-            split.c.transaction_id == transaction.c.id))
-        .where(transaction.c.id == 5)
+            split.c.txn_id == txn.c.id))
+        .where(txn.c.id == 5)
         .order_by(split.c.id)
     ).fetchall()
     first, second = rows
-    assert first[transaction.c.memo] == 'split transaction'
-    assert second[transaction.c.memo] == first[transaction.c.memo]
+    assert first[txn.c.memo] == 'split transaction'
+    assert second[txn.c.memo] == first[txn.c.memo]
     assert first[split.c.memo] == 'split memo 1'
     assert second[split.c.memo] == 'split memo 2'
     assert first.category_id == 1
@@ -234,7 +234,7 @@ def test_import_transaction_minimal_split(std_xhb_file, db_connection):
 
     rows = db_connection.execute(
         select([split])
-        .where(split.c.transaction_id == 6)
+        .where(split.c.txn_id == 6)
         .order_by(split.c.id)
     ).fetchall()
     first, second = rows
@@ -249,9 +249,9 @@ def test_import_transaction_no_tags(std_xhb_file, db_connection):
         initial_import(std_xhb_file, db_connection)
 
     count = db_connection.execute(
-        select([func.count(transaction_tag.c.id)])
-        .where(transaction_tag.c.transaction_id == 1)
-        .order_by(transaction_tag.c.name)
+        select([func.count(txn_tag.c.id)])
+        .where(txn_tag.c.txn_id == 1)
+        .order_by(txn_tag.c.name)
     ).scalar()
     assert count == 0
 
@@ -261,9 +261,9 @@ def test_import_transaction_with_tags(std_xhb_file, db_connection):
         initial_import(std_xhb_file, db_connection)
 
     rows = db_connection.execute(
-        select([transaction_tag.c.name])
-        .where(transaction_tag.c.transaction_id == 2)
-        .order_by(transaction_tag.c.name)
+        select([txn_tag.c.name])
+        .where(txn_tag.c.txn_id == 2)
+        .order_by(txn_tag.c.name)
     ).fetchall()
     assert [row.name for row in rows] == ['tag1', 'tag2']
 

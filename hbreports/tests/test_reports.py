@@ -35,11 +35,11 @@ def demo_db(db_connection):
         {'id': 1, 'name': 'account1', 'currency_id': 1},
         {'id': 2, 'name': 'account2', 'currency_id': 1},
     ])
-    db_connection.execute(db.transaction.insert(), [
+    db_connection.execute(db.txn.insert(), [
         {'account_id': 1, 'date': datetime.date(2018, 1, 1), 'status': 0},
     ])
     db_connection.execute(db.split.insert(), [
-        {'transaction_id': 1, 'amount': 10.0},
+        {'txn_id': 1, 'amount': 10.0},
     ])
 
 # TTA report tests
@@ -94,7 +94,7 @@ def test_tta_basic(db_connection):
     trans = [{'account_id': accounts[0]['id'],
               'date': datetime.date(2019, 1, 1),
               'status': 0}] * 3
-    db_connection.execute(db.transaction.insert(), trans)
+    db_connection.execute(db.txn.insert(), trans)
 
     report = TtaReport()
     table = report.run(db_connection)

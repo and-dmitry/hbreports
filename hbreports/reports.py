@@ -11,7 +11,7 @@ from hbreports.db import (
     account,
     category,
     split,
-    transaction,
+    txn,
 )
 from hbreports.tables import (
     SimpleTable,
@@ -36,11 +36,11 @@ class TtaReport:
         table.add_row(['Accounts', 'Transactions qty.'])
         result = dbc.execute(
             select([account.c.name,
-                    func.count(transaction.c.id)])
+                    func.count(txn.c.id)])
             .select_from(account.outerjoin(
-                transaction,
+                txn,
                 # explicit on-clause seems better
-                transaction.c.account_id == account.c.id))
+                txn.c.account_id == account.c.id))
             .group_by(account.c.name)
             .order_by(account.c.name)
         )
@@ -67,7 +67,7 @@ class AmcReport:
         # income/expense category, internal xfers
         topcat = category.alias()
         subcat = category.alias()
-        year = func.strftime('%Y', transaction.c.date).label('year')
+        year = func.strftime('%Y', txn.c.date).label('year')
         result = dbc.execute(
             select([
                 topcat.c.name,
@@ -75,8 +75,8 @@ class AmcReport:
                 func.sum(split.c.amount)
             ])
             .select_from(
-                transaction
-                .join(split, split.c.transaction_id == transaction.c.id)
+                txn
+                .join(split, split.c.txn_id == txn.c.id)
                 .outerjoin(subcat, subcat.c.id == split.c.category_id)
                 .outerjoin(topcat,
                            or_(topcat.c.id == subcat.c.parent_id,

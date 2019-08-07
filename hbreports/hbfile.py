@@ -14,8 +14,8 @@ from hbreports.db import (
     currency,
     payee,
     split,
-    transaction,
-    transaction_tag,
+    txn,
+    txn_tag,
 )
 
 
@@ -71,7 +71,7 @@ def _import_category(elem, dbc):
 
 
 def _import_transaction(elem, dbc):
-    result = dbc.execute(transaction.insert().values(
+    result = dbc.execute(txn.insert().values(
         date=datetime.date.fromordinal(int(elem.attrib['date'])),
         account_id=elem.attrib['account'],
         status=elem.get('st', '0'),
@@ -80,11 +80,11 @@ def _import_transaction(elem, dbc):
         info=elem.get('info'),
         paymode=elem.get('paymode')
     ))
-    transaction_id = result.inserted_primary_key[0]
+    txn_id = result.inserted_primary_key[0]
     # tags
     for tag in elem.attrib.get('tags', '').split():
-        dbc.execute(transaction_tag.insert().values(
-            transaction_id=transaction_id,
+        dbc.execute(txn_tag.insert().values(
+            txn_id=txn_id,
             name=tag
         ))
     if int(elem.get('flags', '0')) & 256:  # TODO: enum
@@ -102,12 +102,12 @@ def _import_transaction(elem, dbc):
                 amount=split_amount,
                 category_id=split_category,
                 memo=split_memo,
-                transaction_id=transaction_id))
+                txn_id=txn_id))
     else:
         dbc.execute(split.insert().values(
             amount=elem.attrib['amount'],
             category_id=elem.get('category'),
-            transaction_id=transaction_id))
+            txn_id=txn_id))
 
 
 def _get_category_id(file_category):

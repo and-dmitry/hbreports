@@ -72,8 +72,11 @@ payee = Table(
 )
 
 
-transaction = Table(
-    'transaction',
+# 'txn' for transaction (financial). Breaking a convension of using
+# terms from HomeBank to avoid a long name and a clash with SQL
+# keyword. Both things make it tedious to type in sqlite shell.
+txn = Table(
+    'txn',
     metadata,
     Column('id', Integer, primary_key=True),
     Column('date', Date, nullable=False),
@@ -93,8 +96,8 @@ split = Table(
     Column('amount', Float, nullable=False),
     Column('category_id', None, ForeignKey('category.id')),
     Column('memo', String),
-    Column('transaction_id', None,
-           ForeignKey('transaction.id'), nullable=False)
+    Column('txn_id', None,
+           ForeignKey('txn.id'), nullable=False)
 )
 
 
@@ -102,12 +105,12 @@ split = Table(
 # join transaction and tag tables. Tag information is almost useless on
 # its own for our purposes. Using many-to-many scheme would just mean
 # an additional join.
-transaction_tag = Table(
-    'transaction_tag',
+txn_tag = Table(
+    'txn_tag',
     metadata,
     Column('id', Integer, primary_key=True),
-    Column('transaction_id', None,
-           ForeignKey('transaction.id'), nullable=False),
+    Column('txn_id', None,
+           ForeignKey('txn.id'), nullable=False),
     Column('name', String, nullable=False)
 )
 
