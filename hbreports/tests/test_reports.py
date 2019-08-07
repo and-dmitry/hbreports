@@ -7,48 +7,7 @@ from hbreports import db
 from hbreports.reports import (
     AmcReport,
     TtaReport,
-    ReportTable,
-    ReportTable2d,
 )
-
-
-# ReportTable tests
-
-
-def test_report_table_empty():
-    table = ReportTable()
-    assert list(table.rows) == []
-
-
-def test_report_table_inconsistent_rows():
-    table = ReportTable()
-    table.add_row([1, 2])
-    with pytest.raises(ValueError):
-        table.add_row([1])
-
-
-def test_report_table_add_row():
-    table = ReportTable()
-    row = (1, 2, 3)
-    iterable = iter(row)
-    table.add_row(iterable)
-
-    rows = list(table.rows)
-    assert len(rows) == 1
-    assert list(rows[0]) == list(row)
-
-
-def test_table2d():
-    """Test 2D table"""
-    table = ReportTable2d()
-    table.set_cell('r1', 'c1', 1)
-    table.set_cell('r1', 'c2', 2)
-    table.set_cell('r2', 'c1', 3)
-    table.set_cell('r2', 'c2', 4)
-    rows = [list(row) for row in table.rows]
-    assert rows == [[None, 'c1', 'c2'],
-                    ['r1', 1, 2],
-                    ['r2', 3, 4]]
 
 
 # TODO: duplication with test_hbfile
@@ -136,7 +95,6 @@ def test_amc_one_year(db_connection):
     report = AmcReport(from_year=year,
                        to_year=year)
     table = report.run(db_connection)
-    assert table.width == 2
     header, row = table.rows
     assert header[1] == str(year)
     # None represents 'no category', for now

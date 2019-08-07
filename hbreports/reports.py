@@ -4,8 +4,6 @@ Using abbreviations for report names. Full names would be just
 ridiculously long.
 """
 
-from collections import defaultdict
-
 from sqlalchemy import func
 from sqlalchemy.sql import select
 
@@ -13,52 +11,13 @@ from hbreports.db import (
     account,
     transaction,
 )
+from hbreports.tables import (
+    SimpleTable,
+    Table2d,
+)
 
 
-class ReportTable:
-    """Table with report results.
-
-    When you call run() method on a report, you get an instance of
-    this class.
-    """
-
-    def __init__(self):
-        self._rows = []
-        # Columns number
-        self.width = None
-
-    def add_row(self, iterable):
-        row = tuple(iterable)
-        if self.width and len(row) != self.width:
-            raise ValueError('Wrong number of columns')
-        else:
-            self.width = len(row)
-        self._rows.append(row)
-
-    @property
-    def rows(self):
-        """Get iterator for table rows."""
-        return iter(self._rows)
-
-
-class ReportTable2d:
-
-    def __init__(self):
-        self._table = defaultdict(dict)
-
-    def set_cell(self, row, column, value):
-        self._table[row][column] = value
-
-    @property
-    def rows(self):
-        """Get iterator for table rows."""
-        column_names = sorted({column_name
-                               for row in self._table.values()
-                               for column_name in row.keys()})
-        yield [None] + column_names
-        for row_name in sorted(self._table.keys()):
-            yield [row_name] + [self._table[row_name][column_name]
-                                for column_name in column_names]
+# TODO: abc for reports?
 
 
 class TtaReport:
@@ -71,7 +30,7 @@ class TtaReport:
     name = 'Total transactions quantity by account'
 
     def run(self, dbc):
-        table = ReportTable()
+        table = SimpleTable()
         table.add_row(['Accounts', 'Transactions qty.'])
         result = dbc.execute(
             select([account.c.name,
@@ -99,7 +58,7 @@ class AmcReport:
         self._to_year = to_year
 
     def run(self, dbc):
-        table = ReportTable()
+        table = SimpleTable()
         # We'll start with this:
         # select cat.name, count(*) as cnt, sum(amount) as s from 'transaction' as tr join split on split.transaction_id == tr.id left join category as subcat on subcat.id = split.category_id left join category as cat on cat.id = subcat.parent_id or cat.id = subcat.id and cat.parent_id is null group by cat.name order by cnt desc;
         return table
