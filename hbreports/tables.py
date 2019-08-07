@@ -36,6 +36,7 @@ class SimpleTable:
 
 
 # TODO: convert it to TableBuilder?
+# TODO: add sorting options?
 class Table2d:
     """2D table.
 
