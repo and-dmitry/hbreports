@@ -6,6 +6,7 @@ import of data from such files.
 """
 
 import datetime
+import enum
 import xml.etree.ElementTree as ET
 
 from hbreports.db import (
@@ -17,6 +18,41 @@ from hbreports.db import (
     txn,
     txn_tag,
 )
+
+
+class CategoryFlag(enum.IntFlag):
+    SUB = 1
+    INCOME = 2
+    CUSTOM = 4
+    BUDGET = 8
+    FORCED = 16
+
+
+class TxnFlag(enum.IntFlag):
+    """Transaction flags."""
+    # TODO: check meaning
+    # deprecated since 5.x
+    OLDVALID = 1
+    INCOME = 1 << 1
+    AUTO = 1 << 2
+    # tmp flag?
+    ADDED = 1 << 3
+    # tmp flag?
+    CHANGED = 1 << 4
+    # deprecated since 5.x
+    OLDREMIND = 1 << 5
+    CHEQ2 = 1 << 6
+    # scheduled?
+    LIMIT = 1 << 7
+    SPLIT = 1 << 8
+
+
+class TxnStatus(enum.IntEnum):
+    """Transaction status."""
+    NONE = 0
+    CLEARED = 1
+    RECONCILED = 2
+    REMIND = 3
 
 
 def initial_import(file_object, dbc):
@@ -67,7 +103,7 @@ def _import_category(elem, dbc):
         name=elem.attrib['name'],
         parent_id=elem.get('parent'),
         # 2 means it's income
-        income=bool(flags & 2)))
+        income=bool(flags & CategoryFlag.INCOME)))
 
 
 def _import_transaction(elem, dbc):
@@ -87,7 +123,7 @@ def _import_transaction(elem, dbc):
             txn_id=txn_id,
             name=tag
         ))
-    if int(elem.get('flags', '0')) & 256:  # TODO: enum
+    if int(elem.get('flags', '0')) & TxnFlag.SPLIT:
         SPLIT_DELIMITER = '||'
         split_amounts = elem.attrib['samt'].split(SPLIT_DELIMITER)
         split_categories = [
