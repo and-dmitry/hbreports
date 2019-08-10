@@ -57,6 +57,9 @@ class AmcReport:
         self._to_year = to_year
 
     def run(self, dbc):
+        # TODO: It's not average monthly expenses. It's just annual
+        # expenses.
+        #
         # TODO: this skips years and categories with no
         # transactions. It's fixable but do we really need them?
         #

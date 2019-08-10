@@ -58,6 +58,7 @@ def handle_report_command(args):
 
 
 def main():
+    # TODO: list supported reports with --help or with special command
     parser = argparse.ArgumentParser(prog='hbreports')
     subparsers = parser.add_subparsers(
         dest='command',  # without 'dest' it crashes (argparse bug)
