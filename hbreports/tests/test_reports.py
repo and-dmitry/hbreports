@@ -42,6 +42,7 @@ def demo_db(db_connection):
         {'txn_id': 1, 'amount': 10.0},
     ])
 
+
 # TTA report tests
 
 
@@ -50,7 +51,7 @@ def test_tta_empty_db(db_connection):
     report = TtaReport()
     table = report.run(db_connection)
 
-    rows = list(table.rows)
+    rows = list(table)
     assert len(rows) == 1
     header = rows[0]
     assert isinstance(header[0], str)
@@ -71,10 +72,10 @@ def test_tta_no_transactions(db_connection):
 
     report = TtaReport()
     table = report.run(db_connection)
-    rows = list(table.rows)
+    rows = list(table)
 
     assert len(rows) == 3
-    header, row1, row2 = table.rows
+    header, row1, row2 = rows
     assert list(row1) == [accounts[0]['name'], 0]
     assert list(row2) == [accounts[1]['name'], 0]
 
@@ -98,7 +99,7 @@ def test_tta_basic(db_connection):
 
     report = TtaReport()
     table = report.run(db_connection)
-    header, row1, row2 = table.rows
+    header, row1, row2 = table
     assert list(row1) == [accounts[0]['name'], len(trans)]
     assert list(row2) == [accounts[1]['name'], 0]
 
@@ -111,7 +112,7 @@ def test_amc_basic(db_connection, demo_db):
     report = AmcReport(from_year=year,
                        to_year=year)
     table = report.run(db_connection)
-    header, row = table.rows
+    header, row = table
     assert header[1] == str(year)
     # None represents 'no category', for now
     assert row[0] is None

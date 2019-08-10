@@ -13,10 +13,7 @@ from hbreports.db import (
     split,
     txn,
 )
-from hbreports.tables import (
-    SimpleTable,
-    Table2d,
-)
+from hbreports.tables import FreeTableBuilder, Table
 
 
 # TODO: abc for reports?
@@ -32,7 +29,7 @@ class TtaReport:
     name = 'Total transactions quantity by account'
 
     def run(self, dbc):
-        table = SimpleTable()
+        table = Table()
         table.add_row(['Accounts', 'Transactions qty.'])
         result = dbc.execute(
             select([account.c.name,
@@ -87,9 +84,10 @@ class AmcReport:
             .where(year.between(str(self._from_year), str(self._to_year)))
             .group_by(topcat.c.name, 'year')
         )
-        table = Table2d()
-        table.corner = 'Category/Year'
+        builder = FreeTableBuilder()
+        # TODO: should be corner_label. test & fix
+        builder.corner = 'Category/Year'
         for row in result:
             print(row)
-            table.set_cell(row[0], row[1], row[2])
-        return table
+            builder.set_cell(row[0], row[1], row[2])
+        return builder.table
