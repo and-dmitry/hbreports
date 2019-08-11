@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 
 from hbreports import db
 from hbreports.reports import (
-    AmcReportGenerator,
+    AecReportGenerator,
     Report,
     TtaReportGenerator,
 )
@@ -121,9 +121,9 @@ def test_tta_basic(db_connection):
 # AMC report tests
 
 
-def test_amc_defaults(db_connection, demo_db):
-    """Test amc report with default parameters."""
-    generator = AmcReportGenerator()
+def test_aec_defaults(db_connection, demo_db):
+    """Test aec report with default parameters."""
+    generator = AecReportGenerator()
     report = generator.generate_report(db_connection)
     assert isinstance(report.name, str)
     assert isinstance(report.description, str)
@@ -134,9 +134,9 @@ def test_amc_defaults(db_connection, demo_db):
     assert isinstance(row[1], float)
 
 
-def test_amc_basic(db_connection, demo_db):
+def test_aec_basic(db_connection, demo_db):
     year = 2018
-    generator = AmcReportGenerator(from_year=year,
+    generator = AecReportGenerator(from_year=year,
                                    to_year=year)
     report = generator.generate_report(db_connection)
     assert isinstance(report.name, str)
@@ -149,4 +149,4 @@ def test_amc_basic(db_connection, demo_db):
     assert isinstance(row[1], float)
 
 
-# TODO: real test for amc report
+# TODO: real test for aec report

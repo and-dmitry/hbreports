@@ -60,15 +60,15 @@ class TtaReportGenerator:
         return table
 
 
-class AmcReportGenerator:
+class AecReportGenerator:
 
-    """AMC - Average Monthly expenses by Category.
+    """AEC - Annual Expenses by Category.
 
     Processes transactions in range [from_year, to_year] if these
     arguments are provided. Otherwise processes all transactions.
     """
 
-    name = 'Average monthly expenses by category'
+    name = 'Annual expenses by category'
     description = 'TODO'
 
     def __init__(self, from_year=None, to_year=None):
@@ -81,9 +81,6 @@ class AmcReportGenerator:
         return report
 
     def _get_table(self, dbc):
-        # TODO: It's not average monthly expenses. It's just annual
-        # expenses.
-        #
         # TODO: this skips years and categories with no
         # transactions. It's fixable but do we really need them?
         #
@@ -122,3 +119,6 @@ class AmcReportGenerator:
             print(row)
             builder.set_cell(row[0], row[1], row[2])
         return builder.table
+
+
+# TODO: AMC - Average Monthly expenses by Category
