@@ -30,6 +30,8 @@ def db_connection(db_engine):
 
 @pytest.fixture
 def demo_db(db_connection):
+    # WARNING: use same set of keys for all entries! Otherwise some
+    # keys will be silently ignored.
     db_connection.execute(db.currency.insert(), [
         {'id': 1, 'name': 'currency1'},
     ])
@@ -37,11 +39,19 @@ def demo_db(db_connection):
         {'id': 1, 'name': 'account1', 'currency_id': 1},
         {'id': 2, 'name': 'account2', 'currency_id': 1},
     ])
+    db_connection.execute(db.category.insert(), [
+        {'id': 1, 'name': 'expense_cat1', 'income': False}
+    ])
     db_connection.execute(db.txn.insert(), [
-        {'account_id': 1, 'date': datetime.date(2018, 1, 1), 'status': 0},
+        {'id': 1, 'account_id': 1, 'date': datetime.date(2017, 1, 10),
+         'status': 0},
+        {'id': 2, 'account_id': 1, 'date': datetime.date(2018, 1, 10),
+         'status': 0},
     ])
     db_connection.execute(db.split.insert(), [
-        {'txn_id': 1, 'amount': 10.0},
+        {'txn_id': 1, 'amount': -10.0, 'category_id': None},
+        {'txn_id': 2, 'amount': -15.0, 'category_id': None},
+        {'txn_id': 2, 'amount': -1.1, 'category_id': 1},
     ])
 
 
@@ -125,13 +135,11 @@ def test_aec_defaults(db_connection, demo_db):
     """Test aec report with default parameters."""
     generator = AecReportGenerator()
     report = generator.generate_report(db_connection)
-    assert isinstance(report.name, str)
-    assert isinstance(report.description, str)
 
-    header, row = report.table
-    assert header[1] == '2018'
-    assert row[0] is None
-    assert isinstance(row[1], float)
+    rows = list(report.table)
+    header = rows[0]
+    assert '2017' in header
+    assert '2018' in header
 
 
 def test_aec_basic(db_connection, demo_db):
@@ -142,11 +150,15 @@ def test_aec_basic(db_connection, demo_db):
     assert isinstance(report.name, str)
     assert isinstance(report.description, str)
 
-    header, row = report.table
-    assert header[1] == str(year)
-    # None represents 'no category', for now
-    assert row[0] is None
-    assert isinstance(row[1], float)
+    rows = list(report.table)
+    header = rows[0]
+    assert isinstance(header[0], str), 'corner label is a must'
+    assert list(header[1:]) == [str(year)], \
+        'only selected years should be in header'
+    categories = [row[0] for row in rows[1:]]
+    assert '<other>' in categories
+    assert 'expense_cat1' in categories
+    assert isinstance(rows[1][1], float)
 
 
 # TODO: real test for aec report
