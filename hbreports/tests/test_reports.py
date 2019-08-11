@@ -55,7 +55,7 @@ def test_report_minimal():
     assert report.description is None
 
 
-# TTA report tests
+# total transaction by category report tests
 
 
 def test_tta_empty_db(db_connection):
@@ -118,7 +118,7 @@ def test_tta_basic(db_connection):
     assert list(row2) == [accounts[1]['name'], 0]
 
 
-# AMC report tests
+# Annual expenses by category report tests
 
 
 def test_aec_defaults(db_connection, demo_db):

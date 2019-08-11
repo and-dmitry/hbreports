@@ -2,6 +2,9 @@
 
 Using abbreviations for report names. Full names would be just
 ridiculously long.
+
+There are reports and generators. Generators work with the database
+and create reports. Reports just store results.
 """
 
 from sqlalchemy import func
