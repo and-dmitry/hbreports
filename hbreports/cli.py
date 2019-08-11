@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 
 from hbreports import db
 from hbreports.hbfile import initial_import
-from hbreports.reports import TtaReport
+from hbreports.reports import TtaReportGenerator
 from hbreports.render import PlainTextRenderer
 
 
@@ -48,12 +48,12 @@ def handle_report_command(args):
     db.metadata.create_all(engine)
 
     # TODO: select report, get params
-    report = TtaReport()
+    report_gen = TtaReportGenerator()
     with engine.begin() as db_connection:
-        table = report.run(db_connection)
+        report = report_gen.generate_report(db_connection)
     # TODO: select renderer
     renderer = PlainTextRenderer()
-    renderer.render_table(list(table.rows), sys.stdout)
+    renderer.render_table(report.table, sys.stdout)
     return 0
 
 

@@ -16,10 +16,18 @@ from hbreports.db import (
 from hbreports.tables import FreeTableBuilder, Table
 
 
-# TODO: abc for reports?
+class Report:
+
+    def __init__(self, name, table):
+        self.name = name
+        self.table = table
+        self.description = None
 
 
-class TtaReport:
+# TODO: abc for report generators?
+
+
+class TtaReportGenerator:
     """TTA - Total Transactions by Account.
 
     This is the simpliest report possible. It's actual porpose is to
@@ -27,8 +35,14 @@ class TtaReport:
     """
 
     name = 'Total transactions quantity by account'
+    description = 'TODO'
 
-    def run(self, dbc):
+    def generate_report(self, dbc):
+        report = Report(self.name, self._create_table(dbc))
+        report.description = self.description
+        return report
+
+    def _create_table(self, dbc):
         table = Table()
         table.add_row(['Accounts', 'Transactions qty.'])
         result = dbc.execute(
@@ -46,17 +60,23 @@ class TtaReport:
         return table
 
 
-class AmcReport:
+class AmcReportGenerator:
 
     """AMC - Average Monthly expenses by Category."""
 
     name = 'Average monthly expenses by category'
+    description = 'TODO'
 
     def __init__(self, from_year, to_year):
         self._from_year = from_year
         self._to_year = to_year
 
-    def run(self, dbc):
+    def generate_report(self, dbc):
+        report = Report(self.name, self._get_table(dbc))
+        report.description = self.description
+        return report
+
+    def _get_table(self, dbc):
         # TODO: It's not average monthly expenses. It's just annual
         # expenses.
         #
