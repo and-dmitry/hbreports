@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 
 from hbreports import db
 from hbreports.hbfile import initial_import
-from hbreports.reports import TtaReportGenerator
+from hbreports.reports import AecReportGenerator, TtaReportGenerator
 from hbreports.render import PlainTextRenderer
 
 
@@ -47,8 +47,15 @@ def handle_report_command(args):
     engine = create_engine('sqlite:///' + args.db_path)
     db.metadata.create_all(engine)
 
-    # TODO: select report, get params
-    report_gen = TtaReportGenerator()
+    # TODO: factory
+    # TODO: apply report params
+    if args.report_name == 'tta':
+        report_gen = TtaReportGenerator()
+    elif args.report_name == 'aec':
+        report_gen = AecReportGenerator()
+    else:
+        print('Unknown report', file=sys.stderr)
+        return 1
     with engine.begin() as db_connection:
         report = report_gen.generate_report(db_connection)
     # TODO: select renderer
@@ -79,7 +86,7 @@ def main():
         help='compile a report')
     # TODO: move to parent or change to source (db/xhb)
     report_parser.add_argument('db_path', help='path to sqlite database file')
-    report_parser.add_argument('name', help='name of report')
+    report_parser.add_argument('report_name', help='name of report')
     report_parser.set_defaults(func=handle_report_command)
 
     args = parser.parse_args()
