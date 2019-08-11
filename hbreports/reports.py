@@ -62,12 +62,16 @@ class TtaReportGenerator:
 
 class AmcReportGenerator:
 
-    """AMC - Average Monthly expenses by Category."""
+    """AMC - Average Monthly expenses by Category.
+
+    Processes transactions in range [from_year, to_year] if these
+    arguments are provided. Otherwise processes all transactions.
+    """
 
     name = 'Average monthly expenses by category'
     description = 'TODO'
 
-    def __init__(self, from_year, to_year):
+    def __init__(self, from_year=None, to_year=None):
         self._from_year = from_year
         self._to_year = to_year
 
@@ -88,7 +92,7 @@ class AmcReportGenerator:
         topcat = category.alias()
         subcat = category.alias()
         year = func.strftime('%Y', txn.c.date).label('year')
-        result = dbc.execute(
+        query = (
             select([
                 topcat.c.name,
                 year,
@@ -103,10 +107,14 @@ class AmcReportGenerator:
                                and_(topcat.c.id == subcat.c.id,
                                     topcat.c.parent_id == None)))  # noqa: E711
             )
-            # Using year instead of date probably hurts perfomance a little
-            .where(year.between(str(self._from_year), str(self._to_year)))
             .group_by(topcat.c.name, 'year')
         )
+        # Using year instead of date probably hurts perfomance a little
+        if self._from_year:
+            query = query.where(year >= str(self._from_year))
+        if self._to_year:
+            query = query.where(year <= str(self._from_year))
+        result = dbc.execute(query)
         builder = FreeTableBuilder()
         # TODO: should be corner_label. test & fix
         builder.corner = 'Category/Year'
