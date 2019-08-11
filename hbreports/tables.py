@@ -15,10 +15,12 @@ class Table:
     Iterate over the table to get rows. Row is a tuple.
     """
 
-    def __init__(self):
+    def __init__(self, rows_iterable=[]):
         self._rows = []
         # Columns number
         self._width = 0
+        for row in rows_iterable:
+            self.add_row(row)
 
     def add_row(self, iterable):
         row = tuple(iterable)

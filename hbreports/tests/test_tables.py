@@ -51,6 +51,13 @@ def test_table_bool():
     assert bool(table) == True  # noqa
 
 
+def test_table_from_itarable():
+    data = [[1, 2, 3],
+            [4, 5, 6]]
+    table = Table(iter(data))
+    assert [list(row) for row in table] == data
+
+
 def test_free_builder_empty():
     builder = FreeTableBuilder()
     table = builder.table
