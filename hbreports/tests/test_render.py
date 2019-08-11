@@ -1,14 +1,14 @@
 import io
 
 from hbreports.render import PlainTextRenderer
+from hbreports.tables import Table
 
 
 def test_render_table_plain_text_basic():
     """Test basic rendering to plain text."""
     renderer = PlainTextRenderer()
-    # TODO: use Table!
-    table = [['h1', 'h2'],
-             ['c11', 'c12']]
+    table = Table([['h1', 'h2'],
+                   ['c11', 'c12']])
     stream = io.StringIO()
     renderer.render_table(table, stream)
 

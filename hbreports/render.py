@@ -7,10 +7,10 @@ class PlainTextRenderer:
     """Rendering in plain text."""
 
     # TODO: move stream to ctor
-    def render_table(self, rows, stream):
+    def render_table(self, table, stream):
         """Print table to file-like object."""
         # TODO: alignment, width
-        table = Texttable()
-        table.add_rows(rows)
-        stream.write(table.draw())
+        text_table = Texttable()
+        text_table.add_rows(list(table))
+        stream.write(text_table.draw())
         stream.write('\n')
