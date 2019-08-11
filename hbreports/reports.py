@@ -119,7 +119,6 @@ class AecReportGenerator:
         # TODO: should be corner_label. test & fix
         builder.corner = 'Category/Year'
         for row in result:
-            print(row)
             builder.set_cell(row[0], row[1], row[2])
         return builder.table
 
