@@ -9,15 +9,7 @@ import datetime
 import enum
 import xml.etree.ElementTree as ET
 
-from hbreports.db import (
-    account,
-    category,
-    currency,
-    payee,
-    split,
-    txn,
-    txn_tag,
-)
+from hbreports import db
 
 
 class CategoryFlag(enum.IntFlag):
@@ -81,8 +73,8 @@ def initial_import(file_object, dbc):
     # HomeBamk XML file has no nested elements and forward
     # references. It's very easy to parse. Even an event-driven
     # implementation requires no additional effort.
-    for _, elem in ET.iterparse(file_object, events=['start']):
-        _import_element(elem, dbc)
+    for event, elem in ET.iterparse(file_object, events=['start']):
+        _process_element(elem, dbc)
 
 
 # TODO: create some sort of attr-column mapper?
@@ -90,41 +82,41 @@ def initial_import(file_object, dbc):
 # TODO: check file version
 
 
-def _import_currency(elem, dbc):
+def _process_currency(elem, dbc):
     dbc.execute(
-        currency.insert().values(
+        db.currency.insert().values(
             id=elem.attrib['key'],
             name=elem.attrib['name']))
 
 
-def _import_account(elem, dbc):
+def _process_account(elem, dbc):
     dbc.execute(
-        account.insert().values(
+        db.account.insert().values(
             id=elem.attrib['key'],
             name=elem.attrib['name'],
             currency_id=elem.attrib['curr']))
 
 
-def _import_payee(elem, dbc):
+def _process_payee(elem, dbc):
     dbc.execute(
-        payee.insert().values(
+        db.payee.insert().values(
             id=elem.attrib['key'],
             name=elem.attrib['name']))
 
 
-def _import_category(elem, dbc):
+def _process_category(elem, dbc):
     # TODO: Are subcategories of income categories explicitly marked
     # as income? We should mark anyway.
     flags = int(elem.get('flags', '0'))
-    dbc.execute(category.insert().values(
+    dbc.execute(db.category.insert().values(
         id=elem.attrib['key'],
         name=elem.attrib['name'],
         parent_id=elem.get('parent'),
         income=bool(flags & CategoryFlag.INCOME)))
 
 
-def _import_transaction(elem, dbc):
-    result = dbc.execute(txn.insert().values(
+def _process_transaction(elem, dbc):
+    result = dbc.execute(db.txn.insert().values(
         date=datetime.date.fromordinal(int(elem.attrib['date'])),
         account_id=elem.attrib['account'],
         status=elem.get('st', '0'),
@@ -136,30 +128,48 @@ def _import_transaction(elem, dbc):
         paymode=elem.get('paymode', Paymode.NONE)
     ))
     txn_id = result.inserted_primary_key[0]
+
     # tags
     for tag in elem.attrib.get('tags', '').split():
-        dbc.execute(txn_tag.insert().values(
+        dbc.execute(db.txn_tag.insert().values(
             txn_id=txn_id,
-            name=tag
-        ))
-    if int(elem.get('flags', '0')) & TxnFlag.SPLIT:
-        SPLIT_DELIMITER = '||'
-        split_amounts = elem.attrib['samt'].split(SPLIT_DELIMITER)
-        split_categories = [
-            _get_category_id(cat)
-            for cat in elem.attrib['scat'].split(SPLIT_DELIMITER)]
-        split_memos = elem.attrib['smem'].split(SPLIT_DELIMITER)
-        for split_amount, split_category, split_memo in zip(
-                split_amounts,
-                split_categories,
-                split_memos):
-            dbc.execute(split.insert().values(
-                amount=split_amount,
-                category_id=split_category,
-                memo=split_memo,
-                txn_id=txn_id))
+            name=tag))
+
+    if _is_multipart(elem):
+        _process_multipart_transaction(elem, txn_id, dbc)
     else:
-        dbc.execute(split.insert().values(
+        _process_simple_transaction(elem, txn_id, dbc)
+
+
+def _is_multipart(elem):
+    """Is this a multipart (split) transaction?"""
+    return bool(int(elem.get('flags', '0')) & TxnFlag.SPLIT)
+
+
+def _process_multipart_transaction(elem, txn_id, dbc):
+    DELIMITER = '||'
+
+    amounts = elem.attrib['samt'].split(DELIMITER)
+    categories = [
+        _get_category_id(cat)
+        for cat in elem.attrib['scat'].split(DELIMITER)
+    ]
+    memos = elem.attrib['smem'].split(DELIMITER)
+
+    for amount, category, memo in zip(amounts, categories, memos):
+        dbc.execute(db.split.insert().values(
+            amount=amount,
+            category_id=category,
+            memo=memo,
+            txn_id=txn_id))
+
+
+def _process_simple_transaction(elem, txn_id, dbc):
+    """Process simple transaction.
+
+    This transaction has just one part.
+    """
+    dbc.execute(db.split.insert().values(
             amount=elem.attrib['amount'],
             category_id=elem.get('category'),
             txn_id=txn_id))
@@ -173,19 +183,19 @@ def _get_category_id(file_category):
         return int(file_category)
 
 
-_import_mapping = {
-    'cur': _import_currency,
-    'account': _import_account,
-    'pay': _import_payee,
-    'cat': _import_category,
-    'ope': _import_transaction,
+element_mapping = {
+    'cur': _process_currency,
+    'account': _process_account,
+    'pay': _process_payee,
+    'cat': _process_category,
+    'ope': _process_transaction,
 }
 
 
-def _import_element(elem, dbc):
-    """Import arbitrary element."""
+def _process_element(elem, dbc):
+    """Process arbitrary element."""
     try:
-        func = _import_mapping[elem.tag]
+        func = element_mapping[elem.tag]
     except KeyError:
         # ignore unknown elements
         pass
