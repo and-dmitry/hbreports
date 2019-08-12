@@ -98,3 +98,14 @@ def test_free_builder_set_corner():
     builder.corner_label = label
     table = builder.table
     assert list(table)[0][0] == label
+
+
+def test_free_builder_default_value():
+    """Test default cell value for free builder."""
+    default_value = 0.0
+    builder = FreeTableBuilder(default=default_value)
+    builder.set_cell('r1', 'c1', 1.0)
+    builder.set_cell('r2', 'c2', 2.0)
+    table = builder.table
+    rows = [list(row) for row in table]
+    assert rows[1][2] == default_value

@@ -118,8 +118,7 @@ class AnnualBalanceByCategory:
             query = query.where(year <= str(self._from_year))
         result = dbc.execute(query)
 
-        # TODO: set default value (0.0) for the table to avoid None
-        builder = FreeTableBuilder()
+        builder = FreeTableBuilder(default=0.0)
         builder.corner_label = 'Category/Year'
         for row in result:
             builder.set_cell(row[0] or '<other>', row[1], row[2])
