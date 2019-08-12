@@ -53,8 +53,8 @@ def handle_report_command(args):
     with engine.begin() as db_connection:
         report = report_gen.generate_report(db_connection)
     # TODO: select renderer
-    renderer = PlainTextRenderer()
-    renderer.render_table(report.table, sys.stdout)
+    renderer = PlainTextRenderer(sys.stdout)
+    renderer.render(report)
     return 0
 
 

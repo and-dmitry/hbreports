@@ -3,14 +3,28 @@
 from texttable import Texttable
 
 
-class PlainTextRenderer:
-    """Rendering in plain text."""
+# TODO: add HTML renderer and renderer abc
 
-    # TODO: move stream to ctor
-    def render_table(self, table, stream):
-        """Print table to file-like object."""
+
+class PlainTextRenderer:
+    """Plain-text renderer for reports.
+
+    :param stream: file-like object
+    """
+
+    def __init__(self, stream):
+        self._stream = stream
+
+    def render(self, report):
+        self._render_heading(report.name)
+        self._render_table(report.table)
+
+    def _render_heading(self, text):
+        self._stream.write(f'\n*** ' + text + ' ***\n\n')
+
+    def _render_table(self, table):
         # TODO: alignment, width
         text_table = Texttable()
         text_table.add_rows(list(table))
-        stream.write(text_table.draw())
-        stream.write('\n')
+        self._stream.write(text_table.draw())
+        self._stream.write('\n')
