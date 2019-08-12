@@ -115,6 +115,8 @@ class AecReportGenerator:
         if self._to_year:
             query = query.where(year <= str(self._from_year))
         result = dbc.execute(query)
+
+        # TODO: set default value (0.0) for the table to avoid None
         builder = FreeTableBuilder()
         builder.corner_label = 'Category/Year'
         for row in result:
