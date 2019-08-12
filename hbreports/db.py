@@ -87,6 +87,7 @@ txn = Table(
     Column('payee_id', None, ForeignKey('payee.id')),
     Column('memo', String),
     Column('info', String),
+    # TODO: use 0 instead of null for 'no paymode'
     Column('paymode', Integer)
 )
 

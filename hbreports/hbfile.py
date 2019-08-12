@@ -47,12 +47,29 @@ class TxnFlag(enum.IntFlag):
     SPLIT = 1 << 8
 
 
+# TODO: this is also used in db. Move to 'common' module?
 class TxnStatus(enum.IntEnum):
     """Transaction status."""
     NONE = 0
     CLEARED = 1
     RECONCILED = 2
     REMIND = 3
+
+
+class Paymode(enum.IntEnum):
+    """Transaction paymode."""
+    NONE = 0
+    CREDIT_CARD = 1
+    CHECK = 2
+    CASH = 3
+    TRANSFER = 4
+    INTERNAL_TRANSFER = 5
+    DEBIT_CARD = 6
+    STANDING_ORDER = 7
+    ELECTRONIC_PAYMENT = 8
+    DEPOSIT = 9
+    FEE = 10
+    DIRECT_DEBIT = 11
 
 
 def initial_import(file_object, dbc):
@@ -97,12 +114,13 @@ def initial_import(file_object, dbc):
 
 
 def _import_category(elem, dbc):
+    # TODO: Are subcategories of income categories explicitly marked
+    # as income? We should mark anyway.
     flags = int(elem.get('flags', '0'))
     dbc.execute(category.insert().values(
         id=elem.attrib['key'],
         name=elem.attrib['name'],
         parent_id=elem.get('parent'),
-        # 2 means it's income
         income=bool(flags & CategoryFlag.INCOME)))
 
 
