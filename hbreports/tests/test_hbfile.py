@@ -2,12 +2,12 @@ import datetime
 import io
 
 import pytest
-from sqlalchemy import create_engine
 from sqlalchemy.sql import (
     func,
     select,
 )
 
+from hbreports import db
 from hbreports.db import (
     account,
     category,
@@ -71,7 +71,7 @@ def std_xhb_file():
 
 @pytest.fixture
 def db_engine():
-    engine = create_engine('sqlite:///:memory:', echo=False)
+    engine = db.init_db()
     metadata.create_all(engine)
     yield engine
     engine.dispose()

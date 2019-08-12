@@ -1,7 +1,6 @@
 import datetime
 
 import pytest
-from sqlalchemy import create_engine
 
 from hbreports import db
 from hbreports.reports import (
@@ -15,8 +14,7 @@ from hbreports.tables import Table
 # TODO: duplication with test_hbfile
 @pytest.fixture
 def db_engine():
-    engine = create_engine('sqlite:///:memory:', echo=False)
-    db.metadata.create_all(engine)
+    engine = db.init_db()
     yield engine
     engine.dispose()
 

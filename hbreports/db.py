@@ -27,9 +27,11 @@ from sqlalchemy import (
     String,
     Table,
     UniqueConstraint,
+    create_engine,
     event,
 )
 from sqlalchemy.engine import Engine
+
 
 metadata = MetaData()
 
@@ -121,3 +123,18 @@ def enable_foreign_keys(dbapi_connection, _):
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
+
+
+def init_db(path=None):
+    """Initialize database.
+
+    Call to start working with new or existing database. Use in-memory
+    db by default.
+    """
+    if path:
+        url = 'sqlite:///' + path
+    else:
+        url = 'sqlite:///:memory:'
+    engine = create_engine(url, echo=False)
+    metadata.create_all(engine)
+    return engine

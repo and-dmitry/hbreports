@@ -4,8 +4,6 @@ import argparse
 import os.path
 import sys
 
-from sqlalchemy import create_engine
-
 from hbreports import db
 from hbreports.hbfile import initial_import
 from hbreports.reports import AecReportGenerator, TtaReportGenerator
@@ -26,9 +24,7 @@ def handle_import_command(args):
               file=sys.stderr)
         return 1
 
-    engine = create_engine('sqlite:///' + args.db_path)
-    db.metadata.create_all(engine)
-
+    engine = db.init_db(args.db_path)
     with engine.begin() as dbc, open(args.xhb_path) as f:
         initial_import(f, dbc)
 
@@ -43,9 +39,7 @@ def handle_report_command(args):
               f'Database file "{args.db_path}" not found', file=sys.stderr)
         return 1
 
-    # TODO: DRY - extract init method
-    engine = create_engine('sqlite:///' + args.db_path)
-    db.metadata.create_all(engine)
+    engine = db.init_db(args.db_path)
 
     # TODO: factory
     # TODO: apply report params
