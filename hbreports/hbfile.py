@@ -83,34 +83,36 @@ def initial_import(file_object, dbc):
     tree = ET.parse(file_object)
     root = tree.getroot()
 
-    # TODO: create some sort of attr-column mapper?
-    # TODO: create importer classes?
+    import_order = ['cur', 'account', 'pay', 'cat', 'ope']
+    for elem_name in import_order:
+        for elem in root.findall(elem_name):
+            _import_element(elem, dbc)
 
-    # currencies
-    for elem in root.findall('cur'):
-        dbc.execute(currency.insert().values(
+
+# TODO: create some sort of attr-column mapper?
+# TODO: create importer classes?
+
+
+def _import_currency(elem, dbc):
+    dbc.execute(
+        currency.insert().values(
             id=elem.attrib['key'],
             name=elem.attrib['name']))
 
-    # accounts
-    for elem in root.findall('account'):
-        dbc.execute(account.insert().values(
+
+def _import_account(elem, dbc):
+    dbc.execute(
+        account.insert().values(
             id=elem.attrib['key'],
             name=elem.attrib['name'],
             currency_id=elem.attrib['curr']))
 
-    # payees
-    for elem in root.findall('pay'):
-        dbc.execute(payee.insert().values(
+
+def _import_payee(elem, dbc):
+    dbc.execute(
+        payee.insert().values(
             id=elem.attrib['key'],
             name=elem.attrib['name']))
-
-    for elem in root.findall('cat'):
-        _import_category(elem, dbc)
-
-    # transactions
-    for elem in root.findall('ope'):
-        _import_transaction(elem, dbc)
 
 
 def _import_category(elem, dbc):
@@ -172,3 +174,17 @@ def _get_category_id(file_category):
         return None
     else:
         return int(file_category)
+
+
+_import_mapping = {
+    'cur': _import_currency,
+    'account': _import_account,
+    'pay': _import_payee,
+    'cat': _import_category,
+    'ope': _import_transaction,
+}
+
+
+def _import_element(elem, dbc):
+    """Import arbitrary element."""
+    _import_mapping[elem.tag](elem, dbc)
