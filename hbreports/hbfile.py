@@ -78,19 +78,16 @@ def initial_import(file_object, dbc):
     :param file_object: file-like object with XHB data
     :param sqlalchemy.engine.Connectable dbc: database connection
     """
-    # TODO: How much memory does the parsing require for the largest
-    # possible file? Try iterparse?
-    tree = ET.parse(file_object)
-    root = tree.getroot()
-
-    import_order = ['cur', 'account', 'pay', 'cat', 'ope']
-    for elem_name in import_order:
-        for elem in root.findall(elem_name):
-            _import_element(elem, dbc)
+    # HomeBamk XML file has no nested elements and forward
+    # references. It's very easy to parse. Even an event-driven
+    # implementation requires no additional effort.
+    for _, elem in ET.iterparse(file_object, events=['start']):
+        _import_element(elem, dbc)
 
 
 # TODO: create some sort of attr-column mapper?
 # TODO: create importer classes?
+# TODO: check file version
 
 
 def _import_currency(elem, dbc):
@@ -187,4 +184,10 @@ _import_mapping = {
 
 def _import_element(elem, dbc):
     """Import arbitrary element."""
-    _import_mapping[elem.tag](elem, dbc)
+    try:
+        func = _import_mapping[elem.tag]
+    except KeyError:
+        # ignore unknown elements
+        pass
+    else:
+        func(elem, dbc)
