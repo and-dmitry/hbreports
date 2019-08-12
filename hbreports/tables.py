@@ -60,15 +60,14 @@ class FreeTableBuilder:
 
     This builder supports filling cells in arbitrary order.
 
+    :param str corner_label: label for left top corner (header)
     :param default: value to use for empty cells
     """
 
-    def __init__(self, default=None):
+    # TODO: change defaults to empty string
+    def __init__(self, corner_label=None, default=None):
         self._table = defaultdict(dict)
-        # TODO: make corner_label a ctor arg
-        # There is a special attribute to set content of left top
-        # corner cell. You can't do it with set_cell().
-        self.corner_label = None
+        self._corner_label = corner_label
         self._default = default
 
     def set_cell(self, row, column, value):
@@ -85,7 +84,7 @@ class FreeTableBuilder:
                                for row in self._table.values()
                                for column_name in row.keys()})
         # header
-        generated_table.add_row([self.corner_label] + column_names)
+        generated_table.add_row([self._corner_label] + column_names)
 
         for row_name in sorted(self._table.keys()):
             generated_table.add_row(

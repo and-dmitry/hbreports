@@ -92,10 +92,9 @@ def test_free_builder_with_gaps():
 
 def test_free_builder_set_corner():
     """Test setting left corner label with free builder."""
-    builder = FreeTableBuilder()
-    builder.set_cell('r1', 'c1', 1)
     label = 'Corner label'
-    builder.corner_label = label
+    builder = FreeTableBuilder(corner_label=label)
+    builder.set_cell('r1', 'c1', 1)
     table = builder.table
     assert list(table)[0][0] == label
 
