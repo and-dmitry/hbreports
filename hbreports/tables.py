@@ -72,15 +72,21 @@ class FreeTableBuilder:
 
     @property
     def table(self):
-        """Create table."""
+        """Get table."""
+        if not self._table:
+            return Table()
+
         generated_table = Table()
-        if self._table:
-            column_names = sorted({column_name
-                                   for row in self._table.values()
-                                   for column_name in row.keys()})
-            generated_table.add_row([self.corner_label] + column_names)
-            for row_name in sorted(self._table.keys()):
-                generated_table.add_row(
-                    [row_name] + [self._table[row_name].get(column_name)
-                                  for column_name in column_names])
+        column_names = sorted({column_name
+                               for row in self._table.values()
+                               for column_name in row.keys()})
+        # header
+        generated_table.add_row([self.corner_label] + column_names)
+
+        for row_name in sorted(self._table.keys()):
+            generated_table.add_row(
+                [row_name]
+                + [self._table[row_name].get(column_name)
+                   for column_name in column_names])
+
         return generated_table
