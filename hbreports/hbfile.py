@@ -132,7 +132,9 @@ def _import_transaction(elem, dbc):
         payee_id=elem.get('payee'),
         memo=elem.get('wording'),
         info=elem.get('info'),
-        paymode=elem.get('paymode')
+        # Paymode.NONE is the only value for 'no paymode'. NULL is not
+        # allowed (to avoid ambiguity).
+        paymode=elem.get('paymode', Paymode.NONE)
     ))
     txn_id = result.inserted_primary_key[0]
     # tags

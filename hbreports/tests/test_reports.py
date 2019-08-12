@@ -3,6 +3,7 @@ import datetime
 import pytest
 
 from hbreports import db
+from hbreports.hbfile import Paymode
 from hbreports.reports import (
     AecReportGenerator,
     Report,
@@ -42,9 +43,9 @@ def demo_db(db_connection):
     ])
     db_connection.execute(db.txn.insert(), [
         {'id': 1, 'account_id': 1, 'date': datetime.date(2017, 1, 10),
-         'status': 0},
+         'status': 0, 'paymode': Paymode.NONE},
         {'id': 2, 'account_id': 1, 'date': datetime.date(2018, 1, 10),
-         'status': 0},
+         'status': 0, 'paymode': Paymode.NONE},
     ])
     db_connection.execute(db.split.insert(), [
         {'txn_id': 1, 'amount': -10.0, 'category_id': None},
@@ -116,6 +117,7 @@ def test_tta_basic(db_connection):
     db_connection.execute(db.account.insert(), accounts)
     trans = [{'account_id': accounts[0]['id'],
               'date': datetime.date(2019, 1, 1),
+              'paymode': Paymode.NONE,
               'status': 0}] * 3
     db_connection.execute(db.txn.insert(), trans)
 

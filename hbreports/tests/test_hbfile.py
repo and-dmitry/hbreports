@@ -18,7 +18,7 @@ from hbreports.db import (
     txn,
     txn_tag,
 )
-from hbreports.hbfile import initial_import
+from hbreports.hbfile import initial_import, Paymode
 
 
 # Hard-coded input makes tests fragile and leads to duplication. On
@@ -162,6 +162,7 @@ def test_import_transaction_minimal(std_xhb_file, db_connection):
     assert row.account_id == 1
     assert row.status == 0
     assert round(row.amount, 2) == -1.0
+    assert row.paymode == Paymode.NONE, 'default paymode expected'
 
 
 def test_import_transaction_full(std_xhb_file, db_connection):
