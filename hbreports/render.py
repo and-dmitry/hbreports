@@ -28,11 +28,19 @@ class PlainTextRenderer:
     def _render_table(self, table):
         # TODO: alignment
         text_table = Texttable(self._width)
-        # TODO: this is not the right place for value formatting and
-        # it doesn't print trailing zeros
-        text_table.set_precision(2)
+        # TODO: formatting information should be provided by report
+        # generator
+        text_table.set_cols_dtype([_table_format] * table.width)
         # TODO: move alignment options to the Table?
         text_table.set_cols_align(['l'] + ['r'] * (table.width - 1))
         text_table.add_rows(list(table))
         self._stream.write(text_table.draw())
         self._stream.write('\n')
+
+
+def _table_format(value):
+    """Format value for table."""
+    if isinstance(value, float):
+        return f'{value:.2f}'
+    else:
+        return str(value)
