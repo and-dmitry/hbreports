@@ -1,8 +1,5 @@
 """Reports.
 
-Using abbreviations for report names. Full names would be just
-ridiculously long.
-
 There are reports and generators. Generators work with the database
 and create reports. Reports just store results.
 """
@@ -31,8 +28,8 @@ class Report:
 # TODO: abc for report generators?
 
 
-class TtaReportGenerator:
-    """TTA - Total Transactions by Account.
+class TxnsByAccount:
+    """Total Transactions by Account (TTA) report generator.
 
     This is the simpliest report possible. It's actual porpose is to
     help design the reports framework.
@@ -64,15 +61,14 @@ class TtaReportGenerator:
         return table
 
 
-class AecReportGenerator:
-
-    """AEC - Annual Expenses by Category.
+class AnnualBalanceByCategory:
+    """Annual Balance by Category (ABC) report generator.
 
     Processes transactions in range [from_year, to_year] if these
     arguments are provided. Otherwise processes all transactions.
     """
 
-    name = 'Annual expenses by category'
+    name = 'Annual balance by category'
     description = 'TODO'
 
     def __init__(self, from_year=None, to_year=None):
@@ -90,8 +86,7 @@ class AecReportGenerator:
         # TODO: this skips years and categories with no
         # transactions. It's fixable but do we really need them?
         #
-        # TODO: Filter income/expense category. Filter closed and
-        # marked accounts?
+        # TODO: Filter out closed and marked accounts?
         topcat = category.alias()
         subcat = category.alias()
         year = func.strftime('%Y', txn.c.date).label('year')

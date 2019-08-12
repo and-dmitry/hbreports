@@ -5,9 +5,9 @@ import pytest
 from hbreports import db
 from hbreports.hbfile import Paymode, TxnStatus
 from hbreports.reports import (
-    AecReportGenerator,
+    AnnualBalanceByCategory,
     Report,
-    TtaReportGenerator,
+    TxnsByAccount,
 )
 from hbreports.tables import Table
 
@@ -69,7 +69,7 @@ def test_report_minimal():
 
 def test_tta_empty_db(db_connection):
     """Test TTA with empty db."""
-    generator = TtaReportGenerator()
+    generator = TxnsByAccount()
     report = generator.generate_report(db_connection)
     assert isinstance(report.name, str)
     assert isinstance(report.description, str)
@@ -93,7 +93,7 @@ def test_tta_no_transactions(db_connection):
     ]
     db_connection.execute(db.account.insert(), accounts)
 
-    generator = TtaReportGenerator()
+    generator = TxnsByAccount()
     report = generator.generate_report(db_connection)
     rows = list(report.table)
 
@@ -121,7 +121,7 @@ def test_tta_basic(db_connection):
               'status': 0}] * 3
     db_connection.execute(db.txn.insert(), trans)
 
-    generator = TtaReportGenerator()
+    generator = TxnsByAccount()
     report = generator.generate_report(db_connection)
     header, row1, row2 = report.table
     assert list(row1) == [accounts[0]['name'], len(trans)]
@@ -131,9 +131,8 @@ def test_tta_basic(db_connection):
 # Annual expenses by category report tests
 
 
-def test_aec_defaults(db_connection, demo_db):
-    """Test aec report with default parameters."""
-    generator = AecReportGenerator()
+def test_abc_defaults(db_connection, demo_db):
+    generator = AnnualBalanceByCategory()
     report = generator.generate_report(db_connection)
 
     rows = list(report.table)
@@ -142,10 +141,10 @@ def test_aec_defaults(db_connection, demo_db):
     assert '2018' in header
 
 
-def test_aec_basic(db_connection, demo_db):
+def test_abc_basic(db_connection, demo_db):
     year = 2018
-    generator = AecReportGenerator(from_year=year,
-                                   to_year=year)
+    generator = AnnualBalanceByCategory(from_year=year,
+                                        to_year=year)
     report = generator.generate_report(db_connection)
     assert isinstance(report.name, str)
     assert isinstance(report.description, str)
@@ -159,6 +158,3 @@ def test_aec_basic(db_connection, demo_db):
     assert '<other>' in categories
     assert 'expense_cat1' in categories
     assert isinstance(rows[1][1], float)
-
-
-# TODO: real test for aec report

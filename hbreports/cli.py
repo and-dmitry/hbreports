@@ -6,7 +6,7 @@ import sys
 
 from hbreports import db
 from hbreports.hbfile import initial_import
-from hbreports.reports import AecReportGenerator, TtaReportGenerator
+from hbreports.reports import AnnualBalanceByCategory, TxnsByAccount
 from hbreports.render import PlainTextRenderer
 
 
@@ -44,9 +44,9 @@ def handle_report_command(args):
     # TODO: factory
     # TODO: apply report params
     if args.report_name == 'tta':
-        report_gen = TtaReportGenerator()
-    elif args.report_name == 'aec':
-        report_gen = AecReportGenerator()
+        report_gen = TxnsByAccount()
+    elif args.report_name == 'abc':
+        report_gen = AnnualBalanceByCategory()
     else:
         print('Unknown report', file=sys.stderr)
         return 1
