@@ -3,7 +3,7 @@ import datetime
 import pytest
 
 from hbreports import db
-from hbreports.hbfile import Paymode
+from hbreports.hbfile import Paymode, TxnStatus
 from hbreports.reports import (
     AecReportGenerator,
     Report,
@@ -43,9 +43,9 @@ def demo_db(db_connection):
     ])
     db_connection.execute(db.txn.insert(), [
         {'id': 1, 'account_id': 1, 'date': datetime.date(2017, 1, 10),
-         'status': 0, 'paymode': Paymode.NONE},
+         'status': TxnStatus.RECONCILED, 'paymode': Paymode.NONE},
         {'id': 2, 'account_id': 1, 'date': datetime.date(2018, 1, 10),
-         'status': 0, 'paymode': Paymode.NONE},
+         'status': TxnStatus.RECONCILED, 'paymode': Paymode.NONE},
     ])
     db_connection.execute(db.split.insert(), [
         {'txn_id': 1, 'amount': -10.0, 'category_id': None},

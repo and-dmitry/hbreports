@@ -16,6 +16,7 @@ from hbreports.db import (
     split,
     txn,
 )
+from hbreports.hbfile import Paymode, TxnStatus
 from hbreports.tables import FreeTableBuilder, Table
 
 
@@ -77,6 +78,8 @@ class AecReportGenerator:
     def __init__(self, from_year=None, to_year=None):
         self._from_year = from_year
         self._to_year = to_year
+        # TODO: get from args
+        self._currency_id = 1
 
     def generate_report(self, dbc):
         report = Report(self.name, self._get_table(dbc))
@@ -87,8 +90,8 @@ class AecReportGenerator:
         # TODO: this skips years and categories with no
         # transactions. It's fixable but do we really need them?
         #
-        # TODO: this is not working correctly yet: filter tr status,
-        # income/expense category, internal xfers
+        # TODO: Filter income/expense category. Filter closed and
+        # marked accounts?
         topcat = category.alias()
         subcat = category.alias()
         year = func.strftime('%Y', txn.c.date).label('year')
@@ -101,12 +104,16 @@ class AecReportGenerator:
             .select_from(
                 txn
                 .join(split, split.c.txn_id == txn.c.id)
+                .join(account, account.c.id == txn.c.account_id)
                 .outerjoin(subcat, subcat.c.id == split.c.category_id)
                 .outerjoin(topcat,
                            or_(topcat.c.id == subcat.c.parent_id,
                                and_(topcat.c.id == subcat.c.id,
                                     topcat.c.parent_id == None)))  # noqa: E711
             )
+            .where(account.c.currency_id == self._currency_id)
+            .where(txn.c.status == TxnStatus.RECONCILED)
+            .where(txn.c.paymode != Paymode.INTERNAL_TRANSFER)
             .group_by(topcat.c.name, 'year')
         )
         # Using year instead of date probably hurts perfomance a little
