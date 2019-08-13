@@ -183,7 +183,7 @@ def _get_category_id(file_category):
         return int(file_category)
 
 
-element_mapping = {
+_ELEMENT_MAPPING = {
     'cur': _process_currency,
     'account': _process_account,
     'pay': _process_payee,
@@ -195,7 +195,7 @@ element_mapping = {
 def _process_element(elem, dbc):
     """Process arbitrary element."""
     try:
-        func = element_mapping[elem.tag]
+        func = _ELEMENT_MAPPING[elem.tag]
     except KeyError:
         # ignore unknown elements
         pass
