@@ -32,6 +32,7 @@ You will need Python 3.7 and pipenv to install hbreports.
    cd hbreports/
    pipenv install
 
+   pipenv shell
    python -m hbreports.cli --help
 
 
@@ -58,6 +59,7 @@ Development
    git clone https://github.com/and-dmitry/hbreports.git
    cd hbreports/
    pipenv install --dev
+   pipenv shell
    pytest
 
 
