@@ -151,8 +151,8 @@ def _process_multipart_transaction(elem, txn_id, dbc):
 
     amounts = elem.attrib['samt'].split(DELIMITER)
     categories = [
-        _get_category_id(cat)
         for cat in elem.attrib['scat'].split(DELIMITER)
+        _get_split_category_id(cat)
     ]
     memos = elem.attrib['smem'].split(DELIMITER)
 
@@ -175,12 +175,14 @@ def _process_simple_transaction(elem, txn_id, dbc):
             txn_id=txn_id))
 
 
-def _get_category_id(file_category):
-    """Get category_id from category read from file."""
-    if file_category == '0':
+def _get_split_category_id(split_category):
+    """Get category id from split."""
+    # Split category with id=0 means category is not specified. This
+    # is a split only quirk.
+    if split_category == '0':
         return None
     else:
-        return int(file_category)
+        return int(split_category)
 
 
 _ELEMENT_MAPPING = {
