@@ -69,6 +69,13 @@ NO_CURRENCY_NAME_XHB = """<homebank v="1.3" d="050206">
 </homebank>
 """
 
+NO_CURRENCY_XHB = """<homebank v="1.3" d="050206">
+<properties title="test owner" curr="1" auto_smode="1" auto_weekday="1"/>
+<account key="1" pos="1" type="1" curr="1" name="account1"
+         number="n1" initial="0" minimum="0"/>
+</homebank>
+"""
+
 
 @pytest.fixture
 def std_xhb_file():
@@ -280,6 +287,12 @@ def test_import_without_currency_name(db_connection):
     """Test import when currency name (required attribute) is absent."""
     with pytest.raises(DataImportError, match='name'), db_connection.begin():
         initial_import(io.StringIO(NO_CURRENCY_NAME_XHB), db_connection)
+
+
+def test_import_no_currency(db_connection):
+    """Test import file without currency entry."""
+    with pytest.raises(DataImportError), db_connection.begin():
+        initial_import(io.StringIO(NO_CURRENCY_XHB), db_connection)
 
 
 # TODO:

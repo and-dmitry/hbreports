@@ -10,6 +10,8 @@ import datetime
 import enum
 import xml.etree.ElementTree as ET
 
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+
 from hbreports import db
 
 
@@ -79,7 +81,12 @@ def initial_import(file_object, dbc):
     # references. It's very easy to parse. Even an event-driven
     # implementation requires no additional effort.
     for event, elem in ET.iterparse(file_object, events=['start']):
-        _process_element(elem, dbc)
+        try:
+            _process_element(elem, dbc)
+        except SQLAlchemyError as exc:
+            raise DataImportError(
+                f'Failed to import data from "{elem.tag}" element '
+                'due to a database error') from exc
 
 
 # TODO: create some sort of attr-column mapper?
