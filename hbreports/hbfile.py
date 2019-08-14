@@ -5,6 +5,7 @@ import of data from such files.
 
 """
 
+import collections
 import datetime
 import enum
 import xml.etree.ElementTree as ET
@@ -85,52 +86,50 @@ def initial_import(file_object, dbc):
 def _process_currency(elem, dbc):
     dbc.execute(
         db.currency.insert().values(
-            id=elem.attrib['key'],
-            name=elem.attrib['name']))
+            id=_get_attr(elem, 'key'),
+            name=_get_attr(elem, 'name')))
 
 
 def _process_account(elem, dbc):
     dbc.execute(
         db.account.insert().values(
-            id=elem.attrib['key'],
-            name=elem.attrib['name'],
-            currency_id=elem.attrib['curr']))
+            id=_get_attr(elem, 'key'),
+            name=_get_attr(elem, 'name'),
+            currency_id=_get_attr(elem, 'curr')))
 
 
 def _process_payee(elem, dbc):
     dbc.execute(
         db.payee.insert().values(
-            id=elem.attrib['key'],
-            name=elem.attrib['name']))
+            id=_get_attr(elem, 'key'),
+            name=_get_attr(elem, 'name')))
 
 
 def _process_category(elem, dbc):
     # TODO: Are subcategories of income categories explicitly marked
     # as income? We should mark anyway.
-    flags = int(elem.get('flags', '0'))
+    flags = _get_attr(elem, 'flags')
     dbc.execute(db.category.insert().values(
-        id=elem.attrib['key'],
-        name=elem.attrib['name'],
-        parent_id=elem.get('parent'),
+        id=_get_attr(elem, 'key'),
+        name=_get_attr(elem, 'name'),
+        parent_id=_get_attr(elem, 'parent'),
         income=bool(flags & CategoryFlag.INCOME)))
 
 
 def _process_transaction(elem, dbc):
     result = dbc.execute(db.txn.insert().values(
-        date=datetime.date.fromordinal(int(elem.attrib['date'])),
-        account_id=elem.attrib['account'],
-        status=elem.get('st', '0'),
-        payee_id=elem.get('payee'),
-        memo=elem.get('wording'),
-        info=elem.get('info'),
-        # Paymode.NONE is the only value for 'no paymode'. NULL is not
-        # allowed (to avoid ambiguity).
-        paymode=elem.get('paymode', Paymode.NONE)
+        date=_get_attr(elem, 'date'),
+        account_id=_get_attr(elem, 'account'),
+        status=_get_attr(elem, 'st'),
+        payee_id=_get_attr(elem, 'payee'),
+        memo=_get_attr(elem, 'wording'),
+        info=_get_attr(elem, 'info'),
+        paymode=_get_attr(elem, 'paymode')
     ))
     txn_id = result.inserted_primary_key[0]
 
     # tags
-    for tag in elem.get('tags', '').split():
+    for tag in _get_attr(elem, 'tags').split():
         dbc.execute(db.txn_tag.insert().values(
             txn_id=txn_id,
             name=tag))
@@ -143,18 +142,20 @@ def _process_transaction(elem, dbc):
 
 def _is_multipart(elem):
     """Is this a multipart (split) transaction?"""
-    return bool(int(elem.get('flags', '0')) & TxnFlag.SPLIT)
+    return bool(_get_attr(elem, 'flags') & TxnFlag.SPLIT)
 
 
 def _process_multipart_transaction(elem, txn_id, dbc):
     DELIMITER = '||'
 
-    amounts = elem.attrib['samt'].split(DELIMITER)
+    # TODO: type conversion
+    # TODO: DRY
+    amounts = _get_attr(elem, 'samt').split(DELIMITER)
     categories = [
-        for cat in elem.attrib['scat'].split(DELIMITER)
         _get_split_category_id(cat)
+        for cat in _get_attr(elem, 'scat').split(DELIMITER)
     ]
-    memos = elem.attrib['smem'].split(DELIMITER)
+    memos = _get_attr(elem, 'smem').split(DELIMITER)
 
     for amount, category, memo in zip(amounts, categories, memos):
         dbc.execute(db.split.insert().values(
@@ -170,8 +171,8 @@ def _process_simple_transaction(elem, txn_id, dbc):
     This transaction has just one part.
     """
     dbc.execute(db.split.insert().values(
-            amount=elem.attrib['amount'],
-            category_id=elem.get('category'),
+            amount=_get_attr(elem, 'amount'),
+            category_id=_get_attr(elem, 'category'),
             txn_id=txn_id))
 
 
@@ -183,6 +184,62 @@ def _get_split_category_id(split_category):
         return None
     else:
         return int(split_category)
+
+
+# Attribute processing information
+_AttrInfo = collections.namedtuple('_AttrInfo', [
+    # function for type conversion
+    'converter',
+    # default value
+    'default',
+])
+
+
+# One mapping for all elements. Luckily, when attributes have the same
+# name, they have the same purpose. Providing all the attribute
+# processing information in declarative manner and in a single place
+# seems like a good idea.
+_ATTR_INFO_MAPPING = {
+    # required attrs
+    # TODO: special default type for required attrs?
+    'key': _AttrInfo(int, None),
+    'name': _AttrInfo(str, None),
+    'curr': _AttrInfo(int, None),  # currency_id
+    'date': _AttrInfo(lambda v: datetime.date.fromordinal(int(v)), None),
+    'account': _AttrInfo(int, None),
+    'samt': _AttrInfo(str, None),
+    'scat': _AttrInfo(str, None),
+    'smem': _AttrInfo(str, None),
+    'amount': _AttrInfo(float, None),
+
+    # optional
+    'flags': _AttrInfo(int, 0),
+    'parent': _AttrInfo(int, None),
+    'st': _AttrInfo(int, 0),
+    'payee': _AttrInfo(int, None),
+    'wording': _AttrInfo(str, None),
+    'info': _AttrInfo(str, None),
+    # Paymode.NONE is the only value for 'no paymode'. NULL is not
+    # allowed (to avoid ambiguity).
+    'paymode': _AttrInfo(int, Paymode.NONE),
+    'category': _AttrInfo(int, None),
+    'tags': _AttrInfo(str, ''),
+}
+
+
+def _get_attr(elem, attr_name):
+    """Get attribute value from Element.
+
+    This function also handles type convertion and default values.
+
+    """
+    assert attr_name in _ATTR_INFO_MAPPING, 'Unknown attribute info requested'
+    info = _ATTR_INFO_MAPPING[attr_name]
+    try:
+        return info.converter(elem.attrib[attr_name])
+    except KeyError:
+        # TODO: check if attr is required, raise exception
+        return info.default
 
 
 _ELEMENT_MAPPING = {
