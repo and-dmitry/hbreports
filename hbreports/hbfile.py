@@ -130,7 +130,7 @@ def _process_transaction(elem, dbc):
     txn_id = result.inserted_primary_key[0]
 
     # tags
-    for tag in elem.attrib.get('tags', '').split():
+    for tag in elem.get('tags', '').split():
         dbc.execute(db.txn_tag.insert().values(
             txn_id=txn_id,
             name=tag))
