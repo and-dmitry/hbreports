@@ -27,7 +27,7 @@ def handle_import_command(args):
     engine = db.init_db(args.db_path)
     with engine.begin() as dbc, open(args.xhb_path) as f:
         initial_import(f, dbc)
-
+    # TODO: handle import errors. Here or in main?
     return 0
 
 

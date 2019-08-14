@@ -65,6 +65,10 @@ class Paymode(enum.IntEnum):
     DIRECT_DEBIT = 11
 
 
+class DataImportError(Exception):
+    """Failed to import data from HomeBank file."""
+
+
 def initial_import(file_object, dbc):
     """Import data from file for the first time.
 
@@ -195,24 +199,29 @@ _AttrInfo = collections.namedtuple('_AttrInfo', [
 ])
 
 
+# Marker for required attributes. "None" is a viable default, so this
+# special option was introduced.
+_REQUIRED_ATTR = object()
+
+
 # One mapping for all elements. Luckily, when attributes have the same
 # name, they have the same purpose. Providing all the attribute
 # processing information in declarative manner and in a single place
 # seems like a good idea.
 _ATTR_INFO_MAPPING = {
-    # required attrs
-    # TODO: special default type for required attrs?
-    'key': _AttrInfo(int, None),
-    'name': _AttrInfo(str, None),
-    'curr': _AttrInfo(int, None),  # currency_id
-    'date': _AttrInfo(lambda v: datetime.date.fromordinal(int(v)), None),
-    'account': _AttrInfo(int, None),
-    'samt': _AttrInfo(str, None),
-    'scat': _AttrInfo(str, None),
-    'smem': _AttrInfo(str, None),
-    'amount': _AttrInfo(float, None),
+    # required attributes
+    'key': _AttrInfo(int, _REQUIRED_ATTR),
+    'name': _AttrInfo(str, _REQUIRED_ATTR),
+    'curr': _AttrInfo(int, _REQUIRED_ATTR),  # currency_id
+    'date': _AttrInfo(lambda v: datetime.date.fromordinal(int(v)),
+                      _REQUIRED_ATTR),
+    'account': _AttrInfo(int, _REQUIRED_ATTR),
+    'samt': _AttrInfo(str, _REQUIRED_ATTR),
+    'scat': _AttrInfo(str, _REQUIRED_ATTR),
+    'smem': _AttrInfo(str, _REQUIRED_ATTR),
+    'amount': _AttrInfo(float, _REQUIRED_ATTR),
 
-    # optional
+    # optional attributes
     'flags': _AttrInfo(int, 0),
     'parent': _AttrInfo(int, None),
     'st': _AttrInfo(int, 0),
@@ -238,7 +247,9 @@ def _get_attr(elem, attr_name):
     try:
         return info.converter(elem.attrib[attr_name])
     except KeyError:
-        # TODO: check if attr is required, raise exception
+        if info.default is _REQUIRED_ATTR:
+            raise DataImportError(
+                f'Required attribute "{elem.tag}.{attr_name}" not found')
         return info.default
 
 

@@ -18,7 +18,7 @@ from hbreports.db import (
     txn,
     txn_tag,
 )
-from hbreports.hbfile import initial_import, Paymode
+from hbreports.hbfile import initial_import, DataImportError, Paymode
 
 
 # Hard-coded input makes tests fragile and leads to duplication. On
@@ -59,6 +59,13 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
      smem="split memo 1||split memo 2"/>
 <ope date="737254" amount="-8" account="1" flags="256" scat="0||0"
      samt="-1||-7" smem="||"/>
+</homebank>
+"""
+
+NO_CURRENCY_NAME_XHB = """<homebank v="1.3" d="050206">
+<properties title="test owner" curr="1" auto_smode="1" auto_weekday="1"/>
+<cur key="1" flags="0" iso="RUB" symb="₽" syprf="0"
+     dchar="," gchar=" " frac="2" rate="0" mdate="0"/>
 </homebank>
 """
 
@@ -269,10 +276,14 @@ def test_import_transaction_with_tags(std_xhb_file, db_connection):
     assert [row.name for row in rows] == ['tag1', 'tag2']
 
 
+def test_import_without_currency_name(db_connection):
+    """Test import when currency name (required attribute) is absent."""
+    with pytest.raises(DataImportError, match='name'), db_connection.begin():
+        initial_import(io.StringIO(NO_CURRENCY_NAME_XHB), db_connection)
+
+
 # TODO:
 # - non-xml file
 # - not homebank file
 # - unsupported file version
-# - attr not found
-# - elem not found
 # - integrity error
