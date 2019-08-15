@@ -295,8 +295,14 @@ def test_import_no_currency(db_connection):
         initial_import(io.StringIO(NO_CURRENCY_XHB), db_connection)
 
 
-# TODO:
-# - non-xml file
-# - not homebank file
-# - unsupported file version
-# - integrity error
+def test_import_non_xml(db_connection):
+    with pytest.raises(DataImportError, match='XML'), \
+         db_connection.begin():
+        initial_import(io.StringIO(''), db_connection)
+
+
+def test_import_other_xml_file(db_connection):
+    """Test importing XML file, but not Homebank file."""
+    with pytest.raises(DataImportError, match='HomeBank'), \
+         db_connection.begin():  # noqa
+        initial_import(io.StringIO('<foobar/>'), db_connection)

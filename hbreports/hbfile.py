@@ -76,13 +76,14 @@ def initial_import(file_object, dbc):
 
     :param file_object: file-like object with XHB data
     :param sqlalchemy.engine.Connectable dbc: database connection
+
+    :raises DataImportError:
     """
     parser = _StreamParser(dbc)
     parser.parse(file_object)
 
 
 # TODO: create some sort of attr-column mapper?
-# TODO: check file version
 
 
 class _StreamParser:
@@ -101,15 +102,30 @@ class _StreamParser:
 
     def __init__(self, db_connection):
         self._dbc = db_connection
+        self._processed_homebank_element = False
 
     def parse(self, file_object):
-        for event, elem in ET.iterparse(file_object, events=['start']):
-            try:
-                self._do_handle_element(elem)
-            except SQLAlchemyError as exc:
-                raise DataImportError(
-                    f'Failed to import data from "{elem.tag}" element '
-                    'due to a database error') from exc
+        """Parse file.
+
+        :raises DataImportError:
+        """
+        self._processed_homebank_element = False
+
+        try:
+            for event, elem in ET.iterparse(file_object, events=['start']):
+                try:
+                    self._do_handle_element(elem)
+                except SQLAlchemyError as exc:
+                    raise DataImportError(
+                        f'Failed to import data from "{elem.tag}" element '
+                        'due to a database error') from exc
+        except ET.ParseError as exc:
+            raise DataImportError(
+                'XML parsing error.'
+                ' This is probably not a HomeBank file.') from exc
+
+        if not self._processed_homebank_element:
+            raise DataImportError('This is not a HomeBank file.')
 
     def _do_handle_element(self, elem):
         """Handle XML element.
@@ -123,6 +139,12 @@ class _StreamParser:
             pass
         else:
             handler(elem)
+
+    def _handle_homebank(self, elem):
+        """Handle root element."""
+        # TODO: check file version. This requires some additional
+        # research on HomeBank format and actively used versions.
+        self._processed_homebank_element = True
 
     def _handle_cur(self, elem):
         """Handle currency."""
