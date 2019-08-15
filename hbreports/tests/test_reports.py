@@ -12,21 +12,6 @@ from hbreports.reports import (
 from hbreports.tables import Table
 
 
-# TODO: duplication with test_hbfile
-@pytest.fixture
-def db_engine():
-    engine = db.init_db()
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture
-def db_connection(db_engine):
-    connection = db_engine.connect()
-    yield connection
-    connection.close()
-
-
 @pytest.fixture
 def demo_db(db_connection):
     # WARNING: use same set of keys for all entries! Otherwise some

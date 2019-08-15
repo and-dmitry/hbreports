@@ -83,20 +83,6 @@ def std_xhb_file():
     return io.StringIO(STANDARD_XHB)
 
 
-@pytest.fixture
-def db_engine():
-    engine = db.init_db()
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture
-def db_connection(db_engine):
-    connection = db_engine.connect()
-    yield connection
-    connection.close()
-
-
 def test_import_currencies(std_xhb_file, db_connection):
     with db_connection.begin():
         initial_import(std_xhb_file, db_connection)
