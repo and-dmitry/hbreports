@@ -86,7 +86,6 @@ def std_xhb_file():
 @pytest.fixture
 def db_engine():
     engine = db.init_db()
-    metadata.create_all(engine)
     yield engine
     engine.dispose()
 
