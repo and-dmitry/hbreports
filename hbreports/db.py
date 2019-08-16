@@ -32,6 +32,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.engine import Engine
 
+from hbreports.common import Paymode
+
 
 metadata = MetaData()
 
@@ -86,8 +88,7 @@ txn = Table(
     Column('payee_id', None, ForeignKey('payee.id')),
     Column('memo', String),
     Column('info', String),
-    # TODO: add default Paymode.NONE
-    Column('paymode', Integer, nullable=False)
+    Column('paymode', Integer, nullable=False, default=Paymode.NONE)
 )
 
 

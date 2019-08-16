@@ -28,9 +28,9 @@ def demo_db(db_connection):
     ])
     db_connection.execute(db.txn.insert(), [
         {'id': 1, 'account_id': 1, 'date': datetime.date(2017, 1, 10),
-         'status': TxnStatus.RECONCILED, 'paymode': Paymode.NONE},
+         'status': TxnStatus.RECONCILED},
         {'id': 2, 'account_id': 1, 'date': datetime.date(2018, 1, 10),
-         'status': TxnStatus.RECONCILED, 'paymode': Paymode.NONE},
+         'status': TxnStatus.RECONCILED},
     ])
     db_connection.execute(db.split.insert(), [
         {'txn_id': 1, 'amount': -10.0, 'category_id': None},
