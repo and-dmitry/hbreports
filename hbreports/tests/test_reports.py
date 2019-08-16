@@ -3,28 +3,13 @@ import datetime
 import pytest
 
 from hbreports import db
-from hbreports.hbfile import Paymode, TxnStatus
+from hbreports.common import Paymode, TxnStatus
 from hbreports.reports import (
     AnnualBalanceByCategory,
     Report,
     TxnsByAccount,
 )
 from hbreports.tables import Table
-
-
-# TODO: duplication with test_hbfile
-@pytest.fixture
-def db_engine():
-    engine = db.init_db()
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture
-def db_connection(db_engine):
-    connection = db_engine.connect()
-    yield connection
-    connection.close()
 
 
 @pytest.fixture
@@ -43,9 +28,9 @@ def demo_db(db_connection):
     ])
     db_connection.execute(db.txn.insert(), [
         {'id': 1, 'account_id': 1, 'date': datetime.date(2017, 1, 10),
-         'status': TxnStatus.RECONCILED, 'paymode': Paymode.NONE},
+         'status': TxnStatus.RECONCILED},
         {'id': 2, 'account_id': 1, 'date': datetime.date(2018, 1, 10),
-         'status': TxnStatus.RECONCILED, 'paymode': Paymode.NONE},
+         'status': TxnStatus.RECONCILED},
     ])
     db_connection.execute(db.split.insert(), [
         {'txn_id': 1, 'amount': -10.0, 'category_id': None},

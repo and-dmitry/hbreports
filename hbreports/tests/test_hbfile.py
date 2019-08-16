@@ -7,18 +7,17 @@ from sqlalchemy.sql import (
     select,
 )
 
-from hbreports import db
 from hbreports.db import (
     account,
     category,
     currency,
-    metadata,
     payee,
     split,
     txn,
     txn_tag,
 )
-from hbreports.hbfile import initial_import, Paymode
+from hbreports.common import Paymode
+from hbreports.hbfile import initial_import, DataImportError
 
 
 # Hard-coded input makes tests fragile and leads to duplication. On
@@ -36,7 +35,7 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
 <account key="1" pos="1" type="1" curr="1" name="account1"
          number="n1" initial="0" minimum="0"/>
 <account key="2" pos="2" type="2" curr="1" name="account2"
-         initial="0" minimum="0"/>
+         initial="10.33" minimum="0"/>
 <account key="3" pos="3" type="1" curr="2" name="account3"
          initial="0" minimum="0"/>
 <pay key="1" name="payee1"/>
@@ -62,26 +61,25 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
 </homebank>
 """
 
+NO_CURRENCY_NAME_XHB = """<homebank v="1.3" d="050206">
+<properties title="test owner" curr="1" auto_smode="1" auto_weekday="1"/>
+<cur key="1" flags="0" iso="RUB" symb="₽" syprf="0"
+     dchar="," gchar=" " frac="2" rate="0" mdate="0"/>
+</homebank>
+"""
+
+NO_CURRENCY_XHB = """<homebank v="1.3" d="050206">
+<properties title="test owner" curr="1" auto_smode="1" auto_weekday="1"/>
+<account key="1" pos="1" type="1" curr="1" name="account1"
+         number="n1" initial="0" minimum="0"/>
+</homebank>
+"""
+
 
 @pytest.fixture
 def std_xhb_file():
     """File-like object for the standard test-file."""
     return io.StringIO(STANDARD_XHB)
-
-
-@pytest.fixture
-def db_engine():
-    engine = db.init_db()
-    metadata.create_all(engine)
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture
-def db_connection(db_engine):
-    connection = db_engine.connect()
-    yield connection
-    connection.close()
 
 
 def test_import_currencies(std_xhb_file, db_connection):
@@ -107,6 +105,20 @@ def test_import_accounts(std_xhb_file, db_connection):
     ).fetchall()
     assert rows == [(1, 'account1', 1),
                     (3, 'account3', 2)]
+
+
+def test_import_account_initial(std_xhb_file, db_connection):
+    """Test import - account initial value."""
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
+
+    rows = db_connection.execute(
+        select([account.c.initial])
+        .where(account.c.id.in_((1, 2)))
+        .order_by(account.c.id)
+    ).fetchall()
+    assert rows == [(0.0,),
+                    (10.33,)]
 
 
 def test_import_payees(std_xhb_file, db_connection):
@@ -269,10 +281,26 @@ def test_import_transaction_with_tags(std_xhb_file, db_connection):
     assert [row.name for row in rows] == ['tag1', 'tag2']
 
 
-# TODO:
-# - non-xml file
-# - not homebank file
-# - unsupported file version
-# - attr not found
-# - elem not found
-# - integrity error
+def test_import_without_currency_name(db_connection):
+    """Test import when currency name (required attribute) is absent."""
+    with pytest.raises(DataImportError, match='name'), db_connection.begin():
+        initial_import(io.StringIO(NO_CURRENCY_NAME_XHB), db_connection)
+
+
+def test_import_no_currency(db_connection):
+    """Test import file without currency entry."""
+    with pytest.raises(DataImportError), db_connection.begin():
+        initial_import(io.StringIO(NO_CURRENCY_XHB), db_connection)
+
+
+def test_import_non_xml(db_connection):
+    with pytest.raises(DataImportError, match='XML'), \
+         db_connection.begin():
+        initial_import(io.StringIO(''), db_connection)
+
+
+def test_import_other_xml_file(db_connection):
+    """Test importing XML file, but not Homebank file."""
+    with pytest.raises(DataImportError, match='HomeBank'), \
+         db_connection.begin():  # noqa
+        initial_import(io.StringIO('<foobar/>'), db_connection)

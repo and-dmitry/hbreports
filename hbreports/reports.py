@@ -13,7 +13,7 @@ from hbreports.db import (
     split,
     txn,
 )
-from hbreports.hbfile import Paymode, TxnStatus
+from hbreports.common import Paymode, TxnStatus
 from hbreports.tables import FreeTableBuilder, Table
 
 

@@ -32,10 +32,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.engine import Engine
 
+from hbreports.common import Paymode
+
 
 metadata = MetaData()
 
-# TODO: create a namespace for tables?
 
 currency = Table(
     'currency',
@@ -51,7 +52,7 @@ account = Table(
     Column('id', Integer, primary_key=True),
     Column('name', String, nullable=False, unique=True),
     Column('currency_id', None, ForeignKey('currency.id'), nullable=False),
-    # TODO: initial, type
+    Column('initial', Float, nullable=False, default=0.0),
 )
 
 
@@ -87,7 +88,7 @@ txn = Table(
     Column('payee_id', None, ForeignKey('payee.id')),
     Column('memo', String),
     Column('info', String),
-    Column('paymode', Integer, nullable=False)
+    Column('paymode', Integer, nullable=False, default=Paymode.NONE)
 )
 
 
