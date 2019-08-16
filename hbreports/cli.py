@@ -5,7 +5,7 @@ import os.path
 import sys
 
 from hbreports import db
-from hbreports.hbfile import initial_import
+from hbreports.hbfile import initial_import, DataImportError
 from hbreports.reports import AnnualBalanceByCategory, TxnsByAccount
 from hbreports.render import PlainTextRenderer
 
@@ -25,9 +25,12 @@ def handle_import_command(args):
         return 1
 
     engine = db.init_db(args.db_path)
-    with engine.begin() as dbc, open(args.xhb_path) as f:
-        initial_import(f, dbc)
-    # TODO: handle import errors. Here or in main?
+    try:
+        with engine.begin() as dbc, open(args.xhb_path) as f:
+            initial_import(f, dbc)
+    except DataImportError as exc:
+        print('Import failed: ' + str(exc), file=sys.stderr)
+        return 1
     return 0
 
 
@@ -58,7 +61,7 @@ def handle_report_command(args):
     return 0
 
 
-def main():
+def main(argv):
     # TODO: list supported reports with --help or with special command
     parser = argparse.ArgumentParser(prog='hbreports')
     subparsers = parser.add_subparsers(
@@ -83,10 +86,10 @@ def main():
     report_parser.add_argument('report_name', help='name of report')
     report_parser.set_defaults(func=handle_report_command)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     # This is a standard way of handling (sub)commands
     return args.func(args)
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(main(sys.argv))
