@@ -7,12 +7,10 @@ from sqlalchemy.sql import (
     select,
 )
 
-from hbreports import db
 from hbreports.db import (
     account,
     category,
     currency,
-    metadata,
     payee,
     split,
     txn,
