@@ -263,18 +263,21 @@ def _convert_split_categories(categories_str):
             for category in categories_str.split(_SPLIT_DELIMITER)]
 
 
-# Attribute processing rule
-_AttrRule = collections.namedtuple('_AttrRule', [
-    # function for type conversion
-    'converter',
-    # default value
-    'default',
-])
-
-
 # Marker for required attributes. "None" is a viable default, so this
 # special option was introduced.
 _ATTR_NO_DEFAULT = object()
+
+
+# Attribute processing rule
+_AttrRule = collections.namedtuple(
+    '_AttrRule', [
+        # function for type conversion
+        'converter',
+        # default value
+        'default',
+    ],
+    defaults=[_ATTR_NO_DEFAULT],
+)
 
 
 # Map attribute names to processing rules. One mapping for all
@@ -283,18 +286,16 @@ _ATTR_NO_DEFAULT = object()
 # declarative manner and in a single place seems like a good idea.
 _ATTR_RULES_MAP = {
     # required attributes
-    'key': _AttrRule(int, _ATTR_NO_DEFAULT),
-    'name': _AttrRule(str, _ATTR_NO_DEFAULT),
-    'curr': _AttrRule(int, _ATTR_NO_DEFAULT),  # currency_id
-    'date': _AttrRule(_convert_date, _ATTR_NO_DEFAULT),
-    'account': _AttrRule(int, _ATTR_NO_DEFAULT),
-    'samt': _AttrRule(_convert_split_amounts, _ATTR_NO_DEFAULT),
-    'scat': _AttrRule(_convert_split_categories, _ATTR_NO_DEFAULT),
-    'smem': _AttrRule(
-        partial(str.split, sep=_SPLIT_DELIMITER),
-        _ATTR_NO_DEFAULT),
-    'amount': _AttrRule(float, _ATTR_NO_DEFAULT),
-    'initial': _AttrRule(float, _ATTR_NO_DEFAULT),
+    'key': _AttrRule(int),
+    'name': _AttrRule(str),
+    'curr': _AttrRule(int),  # currency_id
+    'date': _AttrRule(_convert_date),
+    'account': _AttrRule(int),
+    'samt': _AttrRule(_convert_split_amounts),
+    'scat': _AttrRule(_convert_split_categories),
+    'smem': _AttrRule(partial(str.split, sep=_SPLIT_DELIMITER)),
+    'amount': _AttrRule(float),
+    'initial': _AttrRule(float),
 
     # optional attributes
     'flags': _AttrRule(int, 0),
