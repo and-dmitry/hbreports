@@ -263,7 +263,7 @@ def _convert_split_categories(categories_str):
             for category in categories_str.split(_SPLIT_DELIMITER)]
 
 
-# Marker for required attributes. "None" is a viable default, so this
+# Marker for required attributes. "None" is a viable value, so this
 # special option was introduced.
 _ATTR_NO_DEFAULT = object()
 
