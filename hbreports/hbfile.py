@@ -8,6 +8,7 @@ import of data from such files.
 import collections
 import datetime
 import enum
+from functools import partial
 import xml.etree.ElementTree as ET
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -262,11 +263,6 @@ def _convert_split_categories(categories_str):
             for category in categories_str.split(_SPLIT_DELIMITER)]
 
 
-def _convert_split_memos(memos_str):
-    """Convert split memos."""
-    return memos_str.split(_SPLIT_DELIMITER)
-
-
 # Attribute processing rule
 _AttrRule = collections.namedtuple('_AttrRule', [
     # function for type conversion
@@ -294,7 +290,9 @@ _ATTR_RULES_MAP = {
     'account': _AttrRule(int, _ATTR_NO_DEFAULT),
     'samt': _AttrRule(_convert_split_amounts, _ATTR_NO_DEFAULT),
     'scat': _AttrRule(_convert_split_categories, _ATTR_NO_DEFAULT),
-    'smem': _AttrRule(_convert_split_memos, _ATTR_NO_DEFAULT),
+    'smem': _AttrRule(
+        partial(str.split, sep=_SPLIT_DELIMITER),
+        _ATTR_NO_DEFAULT),
     'amount': _AttrRule(float, _ATTR_NO_DEFAULT),
 
     # optional attributes
