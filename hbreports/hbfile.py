@@ -212,9 +212,11 @@ def _is_multipart(elem):
 def _process_multipart_transaction(elem, txn_id, dbc):
     DELIMITER = '||'
 
-    # TODO: type conversion
-    # TODO: DRY
-    amounts = _get_attr(elem, 'samt').split(DELIMITER)
+    # TODO: do full conversion in _get_attr?
+    amounts = [
+        float(samt)
+        for samt in _get_attr(elem, 'samt').split(DELIMITER)
+    ]
     categories = [
         _get_split_category_id(cat)
         for cat in _get_attr(elem, 'scat').split(DELIMITER)
