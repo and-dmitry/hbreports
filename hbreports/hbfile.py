@@ -163,6 +163,7 @@ class _StreamParser:
             db.account.insert().values(
                 id=elem.key,
                 name=elem.name,
+                initial=elem.initial,
                 currency_id=elem.curr))
 
     def _handle_pay(self, elem):
@@ -293,6 +294,7 @@ _ATTR_RULES_MAP = {
         partial(str.split, sep=_SPLIT_DELIMITER),
         _ATTR_NO_DEFAULT),
     'amount': _AttrRule(float, _ATTR_NO_DEFAULT),
+    'initial': _AttrRule(float, _ATTR_NO_DEFAULT),
 
     # optional attributes
     'flags': _AttrRule(int, 0),

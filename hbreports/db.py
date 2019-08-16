@@ -51,7 +51,7 @@ account = Table(
     Column('id', Integer, primary_key=True),
     Column('name', String, nullable=False, unique=True),
     Column('currency_id', None, ForeignKey('currency.id'), nullable=False),
-    # TODO: initial, type
+    Column('initial', Float, nullable=False, default=0.0),
 )
 
 

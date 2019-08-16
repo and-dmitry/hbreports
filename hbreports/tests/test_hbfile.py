@@ -36,7 +36,7 @@ STANDARD_XHB = """<homebank v="1.3" d="050206">
 <account key="1" pos="1" type="1" curr="1" name="account1"
          number="n1" initial="0" minimum="0"/>
 <account key="2" pos="2" type="2" curr="1" name="account2"
-         initial="0" minimum="0"/>
+         initial="10.33" minimum="0"/>
 <account key="3" pos="3" type="1" curr="2" name="account3"
          initial="0" minimum="0"/>
 <pay key="1" name="payee1"/>
@@ -106,6 +106,20 @@ def test_import_accounts(std_xhb_file, db_connection):
     ).fetchall()
     assert rows == [(1, 'account1', 1),
                     (3, 'account3', 2)]
+
+
+def test_import_account_initial(std_xhb_file, db_connection):
+    """Test import - account initial value."""
+    with db_connection.begin():
+        initial_import(std_xhb_file, db_connection)
+
+    rows = db_connection.execute(
+        select([account.c.initial])
+        .where(account.c.id.in_((1, 2)))
+        .order_by(account.c.id)
+    ).fetchall()
+    assert rows == [(0.0,),
+                    (10.33,)]
 
 
 def test_import_payees(std_xhb_file, db_connection):
