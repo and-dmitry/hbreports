@@ -54,7 +54,11 @@ def handle_report_command(args):
     renderer.render(report)
 
 
-def main(argv):
+def main(argv=None):
+    """CLI entry point.
+
+    :param list argv: arguments (for testing) or None to use sys.argv
+    """
     # TODO: list supported reports with --help or with special command
     parser = argparse.ArgumentParser(prog='hbreports')
     subparsers = parser.add_subparsers(
@@ -86,4 +90,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
