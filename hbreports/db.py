@@ -35,7 +35,6 @@ from sqlalchemy.engine import Engine
 
 metadata = MetaData()
 
-# TODO: create a namespace for tables?
 
 currency = Table(
     'currency',
@@ -87,6 +86,7 @@ txn = Table(
     Column('payee_id', None, ForeignKey('payee.id')),
     Column('memo', String),
     Column('info', String),
+    # TODO: add default Paymode.NONE
     Column('paymode', Integer, nullable=False)
 )
 
