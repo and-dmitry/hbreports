@@ -15,6 +15,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from hbreports import db
 
 
+# Delimiter for samt, scat, smem (in XHB file)
+_SPLIT_DELIMITER = '||'
+
+
 class CategoryFlag(enum.IntFlag):
     SUB = 1
     INCOME = 2
@@ -210,20 +214,10 @@ def _is_multipart(elem):
 
 
 def _process_multipart_transaction(elem, txn_id, dbc):
-    DELIMITER = '||'
-
-    # TODO: do full conversion in _get_attr?
-    amounts = [
-        float(samt)
-        for samt in _get_attr(elem, 'samt').split(DELIMITER)
-    ]
-    categories = [
-        _get_split_category_id(cat)
-        for cat in _get_attr(elem, 'scat').split(DELIMITER)
-    ]
-    memos = _get_attr(elem, 'smem').split(DELIMITER)
-
-    for amount, category, memo in zip(amounts, categories, memos):
+    for amount, category, memo in zip(
+            _get_attr(elem, 'samt'),
+            _get_attr(elem, 'scat'),
+            _get_attr(elem, 'smem')):
         dbc.execute(db.split.insert().values(
             amount=amount,
             category_id=category,
@@ -242,14 +236,28 @@ def _process_simple_transaction(elem, txn_id, dbc):
             txn_id=txn_id))
 
 
-def _get_split_category_id(split_category):
-    """Get category id from split."""
+def _convert_split_amounts(amounts_str):
+    """Convert split amounts.
+
+    :returns: list of floats
+    """
+    return [float(amount) for amount in amounts_str.split(_SPLIT_DELIMITER)]
+
+
+def _convert_split_categories(categories_str):
+    """Convert split categories.
+
+    :returns: list of values - int id or None
+    """
     # Split category with id=0 means category is not specified. This
     # is a split only quirk.
-    if split_category == '0':
-        return None
-    else:
-        return int(split_category)
+    return [None if category == '0' else int(category)
+            for category in categories_str.split(_SPLIT_DELIMITER)]
+
+
+def _convert_split_memos(memos_str):
+    """Convert split memos."""
+    return memos_str.split(_SPLIT_DELIMITER)
 
 
 # Attribute processing information
@@ -278,9 +286,9 @@ _ATTR_INFO_MAPPING = {
     'date': _AttrInfo(lambda v: datetime.date.fromordinal(int(v)),
                       _REQUIRED_ATTR),
     'account': _AttrInfo(int, _REQUIRED_ATTR),
-    'samt': _AttrInfo(str, _REQUIRED_ATTR),
-    'scat': _AttrInfo(str, _REQUIRED_ATTR),
-    'smem': _AttrInfo(str, _REQUIRED_ATTR),
+    'samt': _AttrInfo(_convert_split_amounts, _REQUIRED_ATTR),
+    'scat': _AttrInfo(_convert_split_categories, _REQUIRED_ATTR),
+    'smem': _AttrInfo(_convert_split_memos, _REQUIRED_ATTR),
     'amount': _AttrInfo(float, _REQUIRED_ATTR),
 
     # optional attributes
