@@ -236,6 +236,14 @@ def _process_simple_transaction(elem, txn_id, dbc):
             txn_id=txn_id))
 
 
+def _convert_date(date_str):
+    """Convert date from HomeBank file format.
+
+    :rtype: datetime.date
+    """
+    return datetime.date.fromordinal(int(date_str))
+
+
 def _convert_split_amounts(amounts_str):
     """Convert split amounts.
 
@@ -283,8 +291,7 @@ _ATTR_INFO_MAPPING = {
     'key': _AttrInfo(int, _REQUIRED_ATTR),
     'name': _AttrInfo(str, _REQUIRED_ATTR),
     'curr': _AttrInfo(int, _REQUIRED_ATTR),  # currency_id
-    'date': _AttrInfo(lambda v: datetime.date.fromordinal(int(v)),
-                      _REQUIRED_ATTR),
+    'date': _AttrInfo(_convert_date, _REQUIRED_ATTR),
     'account': _AttrInfo(int, _REQUIRED_ATTR),
     'samt': _AttrInfo(_convert_split_amounts, _REQUIRED_ATTR),
     'scat': _AttrInfo(_convert_split_categories, _REQUIRED_ATTR),
