@@ -88,9 +88,6 @@ def initial_import(file_object, dbc):
     parser.parse(file_object)
 
 
-# TODO: create some sort of attr-column mapper?
-
-
 class _StreamParser:
 
     """Stream parser for HomeBank files.
