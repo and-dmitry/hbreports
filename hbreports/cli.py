@@ -12,35 +12,29 @@ from hbreports.render import PlainTextRenderer
 
 def handle_import_command(args):
     """Handle "import" command."""
-    # TODO: exceptions?
     if not os.path.exists(args.xhb_path):
-        print('Cannot perform import. '
-              f'HomeBank file "{args.xhb_path}" not found', file=sys.stderr)
-        return 1
+        sys.exit('Cannot perform import. '
+                 f'HomeBank file "{args.xhb_path}" not found.')
 
     if os.path.exists(args.db_path):
-        print('Cannot perform import. '
-              f'Database file "{args.db_path}" already exists',
-              file=sys.stderr)
-        return 1
+        sys.exit('Cannot perform import. '
+                 f'Database file "{args.db_path}" already exists')
 
     engine = db.init_db(args.db_path)
     try:
         with engine.begin() as dbc, open(args.xhb_path) as f:
             initial_import(f, dbc)
     except DataImportError as exc:
-        print('Import failed: ' + str(exc), file=sys.stderr)
-        return 1
-    return 0
+        # TODO: delete db
+        sys.exit('Import failed: ' + str(exc))
 
 
 def handle_report_command(args):
     """Handle "report" command."""
     # TODO: also support xhb (import to memory db)
     if not os.path.exists(args.db_path):
-        print("Can't do a report"
-              f'Database file "{args.db_path}" not found', file=sys.stderr)
-        return 1
+        sys.exit("Can't generate a report. "
+                 f'Database file "{args.db_path}" not found.')
 
     engine = db.init_db(args.db_path)
 
@@ -51,14 +45,12 @@ def handle_report_command(args):
     elif args.report_name == 'abc':
         report_gen = AnnualBalanceByCategory()
     else:
-        print('Unknown report', file=sys.stderr)
-        return 1
+        sys.exit(f'Unknown report "{args.report_name}"')
     with engine.begin() as db_connection:
         report = report_gen.generate_report(db_connection)
     # TODO: select renderer
     renderer = PlainTextRenderer(sys.stdout)
     renderer.render(report)
-    return 0
 
 
 def main(argv):
@@ -82,14 +74,15 @@ def main(argv):
         'report',
         help='compile a report')
     # TODO: move to parent or change to source (db/xhb)
+    # TODO: this is a weird order - report db report_name. Change or use flags.
     report_parser.add_argument('db_path', help='path to sqlite database file')
     report_parser.add_argument('report_name', help='name of report')
     report_parser.set_defaults(func=handle_report_command)
 
     args = parser.parse_args(argv)
     # This is a standard way of handling (sub)commands
-    return args.func(args)
+    args.func(args)
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    main(sys.argv)

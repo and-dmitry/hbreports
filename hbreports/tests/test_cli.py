@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy import create_engine
 
 from hbreports.cli import main
@@ -18,9 +19,8 @@ def test_import_success(tmp_path):
         f.write(MINI_XHB)
     db_path = tmp_path / 'test.db'
 
-    status = main(['import', str(xhb_path), str(db_path)])
+    main(['import', str(xhb_path), str(db_path)])
 
-    assert status == 0
     assert db_path.exists()
 
     # Not using hbreports.db module to keep it as simple as possible
@@ -33,12 +33,54 @@ def test_import_success(tmp_path):
         engine.dispose()
 
 
+def test_import_no_xhb_file(tmp_path):
+    """Test import - XHB doesn't exist."""
+    xhb_path = tmp_path / 'test.xhb'
+    db_path = tmp_path / 'test.db'
+
+    with pytest.raises(SystemExit, match='not found'):
+        main(['import', str(xhb_path), str(db_path)])
+
+
+def test_import_db_exists(tmp_path):
+    """Test import - db already exists."""
+    xhb_path = tmp_path / 'test.xhb'
+    with xhb_path.open('w') as f:
+        f.write(MINI_XHB)
+
+    db_path = tmp_path / 'test.db'
+    db_path.touch()
+
+    with pytest.raises(SystemExit, match='exist'):
+        main(['import', str(xhb_path), str(db_path)])
+
+
 def test_import_non_xml_file(tmp_path):
     xhb_path = tmp_path / 'test.xhb'
     with xhb_path.open('w') as f:
         f.write('test')
     db_path = tmp_path / 'test.db'
 
-    status = main(['import', str(xhb_path), str(db_path)])
+    with pytest.raises(SystemExit, match='XML'):
+        main(['import', str(xhb_path), str(db_path)])
 
-    assert status == 1
+
+def test_report_no_db(tmp_path):
+    """Test report - db doesn't exist."""
+    db_path = tmp_path / 'test.db'
+    with pytest.raises(SystemExit, match='not found'):
+        main(['report', str(db_path), 'abc'])
+
+
+def test_report_unknown(tmp_path):
+    """Test unknown report."""
+    db_path = tmp_path / 'test.db'
+    db_path.touch()
+    report_name = 'badname'
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(['report', str(db_path), report_name])
+
+    exc_str = str(exc_info.value).lower()
+    assert report_name in exc_str
+    assert 'unknown' in exc_str
