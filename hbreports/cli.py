@@ -25,7 +25,8 @@ def handle_import_command(args):
         with engine.begin() as dbc, open(args.xhb_path) as f:
             initial_import(f, dbc)
     except DataImportError as exc:
-        # TODO: delete db
+        # there's no point keeping this empty db
+        os.remove(args.db_path)
         sys.exit('Import failed: ' + str(exc))
 
 

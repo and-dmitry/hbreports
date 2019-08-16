@@ -64,6 +64,8 @@ def test_import_non_xml_file(tmp_path):
     with pytest.raises(SystemExit, match='XML'):
         main(['import', str(xhb_path), str(db_path)])
 
+    assert not db_path.exists(), "shouldn't create database, if import fails"
+
 
 def test_report_no_db(tmp_path):
     """Test report - db doesn't exist."""
