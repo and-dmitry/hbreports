@@ -196,8 +196,7 @@ class _StreamParser:
                 paymode=elem.paymode))
         txn_id = result.inserted_primary_key[0]
 
-        # tags
-        for tag in elem.tags.split():
+        for tag in elem.tags:
             self._dbc.execute(db.txn_tag.insert().values(
                 txn_id=txn_id,
                 name=tag))
@@ -306,8 +305,9 @@ _ATTR_RULES_MAP = {
     # allowed (to avoid ambiguity).
     'paymode': _AttrRule(int, Paymode.NONE),
     'category': _AttrRule(int, None),
-    # TODO: split tags?
-    'tags': _AttrRule(str, ''),
+    # Tags are separated by spaces. Mutable default value shouldn't
+    # cause problems in this case.
+    'tags': _AttrRule(str.split, []),
 }
 
 
