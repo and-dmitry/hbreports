@@ -142,7 +142,7 @@ class _StreamParser:
             # ignoring unknown elements
             pass
         else:
-            handler(elem)
+            handler(_ElementWrapper(elem))
 
     def _handle_homebank(self, elem):
         """Handle root element."""
@@ -154,50 +154,49 @@ class _StreamParser:
         """Handle currency."""
         self._dbc.execute(
             db.currency.insert().values(
-                id=_get_attr(elem, 'key'),
-                name=_get_attr(elem, 'name')))
+                id=elem.key,
+                name=elem.name))
 
     def _handle_account(self, elem):
         self._dbc.execute(
             db.account.insert().values(
-                id=_get_attr(elem, 'key'),
-                name=_get_attr(elem, 'name'),
-                currency_id=_get_attr(elem, 'curr')))
+                id=elem.key,
+                name=elem.name,
+                currency_id=elem.curr))
 
     def _handle_pay(self, elem):
         """Handle payee."""
         self._dbc.execute(
             db.payee.insert().values(
-                id=_get_attr(elem, 'key'),
-                name=_get_attr(elem, 'name')))
+                id=elem.key,
+                name=elem.name))
 
     def _handle_cat(self, elem):
         """Handle category."""
         # TODO: Are subcategories of income categories explicitly marked
         # as income? We should mark anyway.
-        flags = _get_attr(elem, 'flags')
         self._dbc.execute(
             db.category.insert().values(
-                id=_get_attr(elem, 'key'),
-                name=_get_attr(elem, 'name'),
-                parent_id=_get_attr(elem, 'parent'),
-                income=bool(flags & CategoryFlag.INCOME)))
+                id=elem.key,
+                name=elem.name,
+                parent_id=elem.parent,
+                income=bool(elem.flags & CategoryFlag.INCOME)))
 
     def _handle_ope(self, elem):
         """Handle operation (transaction)."""
         result = self._dbc.execute(
             db.txn.insert().values(
-                date=_get_attr(elem, 'date'),
-                account_id=_get_attr(elem, 'account'),
-                status=_get_attr(elem, 'st'),
-                payee_id=_get_attr(elem, 'payee'),
-                memo=_get_attr(elem, 'wording'),
-                info=_get_attr(elem, 'info'),
-                paymode=_get_attr(elem, 'paymode')))
+                date=elem.date,
+                account_id=elem.account,
+                status=elem.st,
+                payee_id=elem.payee,
+                memo=elem.wording,
+                info=elem.info,
+                paymode=elem.paymode))
         txn_id = result.inserted_primary_key[0]
 
         # tags
-        for tag in _get_attr(elem, 'tags').split():
+        for tag in elem.tags.split():
             self._dbc.execute(db.txn_tag.insert().values(
                 txn_id=txn_id,
                 name=tag))
@@ -210,14 +209,14 @@ class _StreamParser:
 
 def _is_multipart(elem):
     """Is this a multipart (split) transaction?"""
-    return bool(_get_attr(elem, 'flags') & TxnFlag.SPLIT)
+    return bool(elem.flags & TxnFlag.SPLIT)
 
 
 def _process_multipart_transaction(elem, txn_id, dbc):
     for amount, category, memo in zip(
-            _get_attr(elem, 'samt'),
-            _get_attr(elem, 'scat'),
-            _get_attr(elem, 'smem')):
+            elem.samt,
+            elem.scat,
+            elem.smem):
         dbc.execute(db.split.insert().values(
             amount=amount,
             category_id=category,
@@ -231,8 +230,8 @@ def _process_simple_transaction(elem, txn_id, dbc):
     This transaction has just one part.
     """
     dbc.execute(db.split.insert().values(
-            amount=_get_attr(elem, 'amount'),
-            category_id=_get_attr(elem, 'category'),
+            amount=elem.amount,
+            category_id=elem.category,
             txn_id=txn_id))
 
 
@@ -268,8 +267,8 @@ def _convert_split_memos(memos_str):
     return memos_str.split(_SPLIT_DELIMITER)
 
 
-# Attribute processing information
-_AttrInfo = collections.namedtuple('_AttrInfo', [
+# Attribute processing rule
+_AttrRule = collections.namedtuple('_AttrRule', [
     # function for type conversion
     'converter',
     # default value
@@ -279,52 +278,62 @@ _AttrInfo = collections.namedtuple('_AttrInfo', [
 
 # Marker for required attributes. "None" is a viable default, so this
 # special option was introduced.
-_REQUIRED_ATTR = object()
+_ATTR_NO_DEFAULT = object()
 
 
-# One mapping for all elements. Luckily, when attributes have the same
-# name, they have the same purpose. Providing all the attribute
-# processing information in declarative manner and in a single place
-# seems like a good idea.
-_ATTR_INFO_MAPPING = {
+# Map attribute names to processing rules. One mapping for all
+# elements. Luckily, when attributes have the same name, they have the
+# same purpose. Providing all the attribute processing information in
+# declarative manner and in a single place seems like a good idea.
+_ATTR_RULES_MAP = {
     # required attributes
-    'key': _AttrInfo(int, _REQUIRED_ATTR),
-    'name': _AttrInfo(str, _REQUIRED_ATTR),
-    'curr': _AttrInfo(int, _REQUIRED_ATTR),  # currency_id
-    'date': _AttrInfo(_convert_date, _REQUIRED_ATTR),
-    'account': _AttrInfo(int, _REQUIRED_ATTR),
-    'samt': _AttrInfo(_convert_split_amounts, _REQUIRED_ATTR),
-    'scat': _AttrInfo(_convert_split_categories, _REQUIRED_ATTR),
-    'smem': _AttrInfo(_convert_split_memos, _REQUIRED_ATTR),
-    'amount': _AttrInfo(float, _REQUIRED_ATTR),
+    'key': _AttrRule(int, _ATTR_NO_DEFAULT),
+    'name': _AttrRule(str, _ATTR_NO_DEFAULT),
+    'curr': _AttrRule(int, _ATTR_NO_DEFAULT),  # currency_id
+    'date': _AttrRule(_convert_date, _ATTR_NO_DEFAULT),
+    'account': _AttrRule(int, _ATTR_NO_DEFAULT),
+    'samt': _AttrRule(_convert_split_amounts, _ATTR_NO_DEFAULT),
+    'scat': _AttrRule(_convert_split_categories, _ATTR_NO_DEFAULT),
+    'smem': _AttrRule(_convert_split_memos, _ATTR_NO_DEFAULT),
+    'amount': _AttrRule(float, _ATTR_NO_DEFAULT),
 
     # optional attributes
-    'flags': _AttrInfo(int, 0),
-    'parent': _AttrInfo(int, None),
-    'st': _AttrInfo(int, 0),
-    'payee': _AttrInfo(int, None),
-    'wording': _AttrInfo(str, None),
-    'info': _AttrInfo(str, None),
+    'flags': _AttrRule(int, 0),
+    'parent': _AttrRule(int, None),
+    'st': _AttrRule(int, 0),
+    'payee': _AttrRule(int, None),
+    'wording': _AttrRule(str, None),
+    'info': _AttrRule(str, None),
     # Paymode.NONE is the only value for 'no paymode'. NULL is not
     # allowed (to avoid ambiguity).
-    'paymode': _AttrInfo(int, Paymode.NONE),
-    'category': _AttrInfo(int, None),
-    'tags': _AttrInfo(str, ''),
+    'paymode': _AttrRule(int, Paymode.NONE),
+    'category': _AttrRule(int, None),
+    # TODO: split tags?
+    'tags': _AttrRule(str, ''),
 }
 
 
-def _get_attr(elem, attr_name):
-    """Get attribute value from Element.
+class _ElementWrapper:
+    """XML Element wrapper.
 
-    This function also handles type convertion and default values.
-
+    This wrapper provides access to XML attributes through instance
+    attributes. It handles default values and type conversion.
     """
-    assert attr_name in _ATTR_INFO_MAPPING, 'Unknown attribute info requested'
-    info = _ATTR_INFO_MAPPING[attr_name]
-    try:
-        return info.converter(elem.attrib[attr_name])
-    except KeyError:
-        if info.default is _REQUIRED_ATTR:
-            raise DataImportError(
-                f'Required attribute "{elem.tag}.{attr_name}" not found')
-        return info.default
+
+    _attr_rules = _ATTR_RULES_MAP
+
+    def __init__(self, elem):
+        self._elem = elem
+
+    def __getattr__(self, name):
+        """XML attrbute access."""
+        assert name in self._attr_rules, \
+            'Unknown attribute rule requested'
+        rule = self._attr_rules[name]
+        try:
+            return rule.converter(self._elem.attrib[name])
+        except KeyError:
+            if rule.default is _ATTR_NO_DEFAULT:
+                raise DataImportError(
+                    f'Required attribute "{self._elem.tag}.{name}" not found')
+            return rule.default
