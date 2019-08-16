@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 from sqlalchemy.exc import SQLAlchemyError
 
 from hbreports import db
+from hbreports.common import Paymode
 
 
 # Delimiter for samt, scat, smem (in XHB file)
@@ -45,31 +46,6 @@ class TxnFlag(enum.IntFlag):
     # scheduled?
     LIMIT = 1 << 7
     SPLIT = 1 << 8
-
-
-# TODO: this is also used in db. Move to 'common' module?
-class TxnStatus(enum.IntEnum):
-    """Transaction status."""
-    NONE = 0
-    CLEARED = 1
-    RECONCILED = 2
-    REMIND = 3
-
-
-class Paymode(enum.IntEnum):
-    """Transaction paymode."""
-    NONE = 0
-    CREDIT_CARD = 1
-    CHECK = 2
-    CASH = 3
-    TRANSFER = 4
-    INTERNAL_TRANSFER = 5
-    DEBIT_CARD = 6
-    STANDING_ORDER = 7
-    ELECTRONIC_PAYMENT = 8
-    DEPOSIT = 9
-    FEE = 10
-    DIRECT_DEBIT = 11
 
 
 class DataImportError(Exception):
@@ -183,6 +159,8 @@ class _StreamParser:
 
     def _handle_ope(self, elem):
         """Handle operation (transaction)."""
+        # TODO: check if paymode and status values are in enums and
+        # issue warnings?
         result = self._dbc.execute(
             db.txn.insert().values(
                 date=elem.date,

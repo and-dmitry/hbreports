@@ -18,7 +18,8 @@ from hbreports.db import (
     txn,
     txn_tag,
 )
-from hbreports.hbfile import initial_import, DataImportError, Paymode
+from hbreports.common import Paymode
+from hbreports.hbfile import initial_import, DataImportError
 
 
 # Hard-coded input makes tests fragile and leads to duplication. On

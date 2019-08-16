@@ -3,7 +3,7 @@ import datetime
 import pytest
 
 from hbreports import db
-from hbreports.hbfile import Paymode, TxnStatus
+from hbreports.common import Paymode, TxnStatus
 from hbreports.reports import (
     AnnualBalanceByCategory,
     Report,
